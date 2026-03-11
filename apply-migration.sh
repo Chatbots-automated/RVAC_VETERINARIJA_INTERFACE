@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "============================================="
+echo "Migration: Fix Treated Animals Detailed View"
+echo "============================================="
+echo ""
+echo "Please copy the SQL from: fix-treated-animals-view.sql"
+echo "And run it in Supabase SQL Editor"
+echo ""
+echo "Or use this command to view the SQL:"
+echo "  cat fix-treated-animals-view.sql"
+echo ""
+echo "After applying, run: npm run build"
