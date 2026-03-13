@@ -1,27 +1,115 @@
 -- =====================================================================
--- Add User Tracking to Treatments and Other Tables
+-- DIAGNOSTIC AND FIX SCRIPT - RUN THIS IN SUPABASE SQL EDITOR
 -- =====================================================================
--- This migration adds user tracking to treatments and other relevant tables
+-- This script will:
+-- 1. Check if columns exist
+-- 2. Add them if they don't exist
+-- 3. Show you the results
+-- 4. Fix the view
+-- =====================================================================
 
--- Add created_by_user_id to treatments
+-- STEP 1: Check if columns exist
+DO $$
+DECLARE
+    v_treatments_has_column boolean;
+    v_visits_has_column boolean;
+    v_vaccinations_has_column boolean;
+BEGIN
+    -- Check treatments
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'treatments' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_treatments_has_column;
+    
+    -- Check animal_visits
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'animal_visits' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_visits_has_column;
+    
+    -- Check vaccinations
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'vaccinations' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_vaccinations_has_column;
+    
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'COLUMN EXISTENCE CHECK:';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'treatments.created_by_user_id exists: %', v_treatments_has_column;
+    RAISE NOTICE 'animal_visits.created_by_user_id exists: %', v_visits_has_column;
+    RAISE NOTICE 'vaccinations.created_by_user_id exists: %', v_vaccinations_has_column;
+    RAISE NOTICE '========================================';
+END $$;
+
+-- STEP 2: Add columns if they don't exist
 ALTER TABLE public.treatments
 ADD COLUMN IF NOT EXISTS created_by_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL;
 
-COMMENT ON COLUMN public.treatments.created_by_user_id IS 'User who created this treatment record';
-
--- Add created_by_user_id to vaccinations
-ALTER TABLE public.vaccinations
-ADD COLUMN IF NOT EXISTS created_by_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL;
-
-COMMENT ON COLUMN public.vaccinations.created_by_user_id IS 'User who created this vaccination record';
-
--- Add created_by_user_id to animal_visits
 ALTER TABLE public.animal_visits
 ADD COLUMN IF NOT EXISTS created_by_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL;
 
-COMMENT ON COLUMN public.animal_visits.created_by_user_id IS 'User who created this visit record';
+ALTER TABLE public.vaccinations
+ADD COLUMN IF NOT EXISTS created_by_user_id uuid REFERENCES public.users(id) ON DELETE SET NULL;
 
--- Update the treated animals view with complete report fixes
+-- Add comments
+COMMENT ON COLUMN public.treatments.created_by_user_id IS 'User who created this treatment record';
+COMMENT ON COLUMN public.animal_visits.created_by_user_id IS 'User who created this visit record';
+COMMENT ON COLUMN public.vaccinations.created_by_user_id IS 'User who created this vaccination record';
+
+-- STEP 3: Verify columns were added
+DO $$
+DECLARE
+    v_treatments_has_column boolean;
+    v_visits_has_column boolean;
+    v_vaccinations_has_column boolean;
+BEGIN
+    -- Check treatments
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'treatments' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_treatments_has_column;
+    
+    -- Check animal_visits
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'animal_visits' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_visits_has_column;
+    
+    -- Check vaccinations
+    SELECT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+          AND table_name = 'vaccinations' 
+          AND column_name = 'created_by_user_id'
+    ) INTO v_vaccinations_has_column;
+    
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'VERIFICATION AFTER ADDING COLUMNS:';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'treatments.created_by_user_id exists: %', v_treatments_has_column;
+    RAISE NOTICE 'animal_visits.created_by_user_id exists: %', v_visits_has_column;
+    RAISE NOTICE 'vaccinations.created_by_user_id exists: %', v_vaccinations_has_column;
+    RAISE NOTICE '========================================';
+    
+    IF v_treatments_has_column AND v_visits_has_column AND v_vaccinations_has_column THEN
+        RAISE NOTICE '✅ SUCCESS! All columns added successfully!';
+    ELSE
+        RAISE NOTICE '❌ ERROR! Some columns were not added!';
+    END IF;
+END $$;
+
+-- STEP 4: Update the view
 DROP VIEW IF EXISTS public.vw_treated_animals_detailed CASCADE;
 
 CREATE OR REPLACE VIEW public.vw_treated_animals_detailed AS
@@ -44,23 +132,9 @@ SELECT
     COALESCE(d.name, NULLIF(TRIM(t.clinical_diagnosis), ''), NULLIF(TRIM(t.animal_condition), ''), 'Nespecifikuota liga') AS disease_name,
     d.code AS disease_code,
     t.clinical_diagnosis,
-    
-    -- FIX: Always show "Patenkinama" for animal condition (8. Gyvūno būklė)
-    COALESCE(t.animal_condition, 'Patenkinama') AS animal_condition,
-    
-    -- FIX: Use treatment registration date as first symptoms date (7. Pirmųjų ligos požymių data)
-    COALESCE(t.first_symptoms_date, t.reg_date) AS first_symptoms_date,
-    
-    -- FIX: Show temperature from visit in tests field (9. Atlikti tyrimai)
-    COALESCE(
-        t.tests,
-        CASE 
-            WHEN av.temperature IS NOT NULL 
-            THEN 'Temperatūra: ' || av.temperature::text || '°C'
-            ELSE NULL
-        END
-    ) AS tests,
-    
+    t.animal_condition,
+    t.first_symptoms_date,
+    t.tests,
     t.services,
     p.name AS medicine_name,
     p.id AS medicine_id,
@@ -83,30 +157,14 @@ SELECT
         THEN (t.withdrawal_until_milk - CURRENT_DATE)
         ELSE 0
     END AS withdrawal_days_milk,
-    
-    -- FIX: Show "Pasveiko" only if this is the last visit for this animal (13. Ligos baigtis)
-    CASE 
-        WHEN t.outcome IS NOT NULL THEN t.outcome
-        WHEN NOT EXISTS (
-            SELECT 1 
-            FROM animal_visits av2 
-            WHERE av2.animal_id = t.animal_id 
-              AND av2.visit_datetime > av.visit_datetime
-              AND av2.status = 'Baigtas'
-        ) THEN 'Pasveiko'
-        ELSE NULL
-    END AS treatment_outcome,
-    
-    -- FIX: Show user's full name (14. Veterinarijos gydytojas)
+    t.outcome AS treatment_outcome,
     COALESCE(u.full_name, t.vet_name, 'Nenurodyta') AS veterinarian,
-    
     t.notes,
     'usage_item' AS medication_source
 FROM public.treatments t
 LEFT JOIN public.animals a ON t.animal_id = a.id
 LEFT JOIN public.diseases d ON t.disease_id = d.id
 LEFT JOIN public.users u ON t.created_by_user_id = u.id
-LEFT JOIN public.animal_visits av ON av.id = t.visit_id
 JOIN public.usage_items ui ON ui.treatment_id = t.id
 JOIN public.products p ON ui.product_id = p.id
 
@@ -131,23 +189,9 @@ SELECT
     COALESCE(d.name, NULLIF(TRIM(t.clinical_diagnosis), ''), NULLIF(TRIM(t.animal_condition), ''), 'Nespecifikuota liga') AS disease_name,
     d.code AS disease_code,
     t.clinical_diagnosis,
-    
-    -- FIX: Always show "Patenkinama" for animal condition (8. Gyvūno būklė)
-    COALESCE(t.animal_condition, 'Patenkinama') AS animal_condition,
-    
-    -- FIX: Use treatment registration date as first symptoms date (7. Pirmųjų ligos požymių data)
-    COALESCE(t.first_symptoms_date, t.reg_date) AS first_symptoms_date,
-    
-    -- FIX: Show temperature from visit in tests field (9. Atlikti tyrimai)
-    COALESCE(
-        t.tests,
-        CASE 
-            WHEN av.temperature IS NOT NULL 
-            THEN 'Temperatūra: ' || av.temperature::text || '°C'
-            ELSE NULL
-        END
-    ) AS tests,
-    
+    t.animal_condition,
+    t.first_symptoms_date,
+    t.tests,
     t.services,
     p.name AS medicine_name,
     p.id AS medicine_id,
@@ -166,30 +210,14 @@ SELECT
         THEN (t.withdrawal_until_milk - CURRENT_DATE)
         ELSE 0
     END AS withdrawal_days_milk,
-    
-    -- FIX: Show "Pasveiko" only if this is the last visit for this animal (13. Ligos baigtis)
-    CASE 
-        WHEN t.outcome IS NOT NULL THEN t.outcome
-        WHEN NOT EXISTS (
-            SELECT 1 
-            FROM animal_visits av2 
-            WHERE av2.animal_id = t.animal_id 
-              AND av2.visit_datetime > av.visit_datetime
-              AND av2.status = 'Baigtas'
-        ) THEN 'Pasveiko'
-        ELSE NULL
-    END AS treatment_outcome,
-    
-    -- FIX: Show user's full name (14. Veterinarijos gydytojas)
+    t.outcome AS treatment_outcome,
     COALESCE(u.full_name, t.vet_name, 'Nenurodyta') AS veterinarian,
-    
     t.notes,
     'treatment_course' AS medication_source
 FROM public.treatments t
 LEFT JOIN public.animals a ON t.animal_id = a.id
 LEFT JOIN public.diseases d ON t.disease_id = d.id
 LEFT JOIN public.users u ON t.created_by_user_id = u.id
-LEFT JOIN public.animal_visits av ON av.id = t.visit_id
 JOIN public.treatment_courses tc ON tc.treatment_id = t.id
 JOIN public.products p ON tc.product_id = p.id
 
@@ -214,23 +242,9 @@ SELECT
     COALESCE(d.name, NULLIF(TRIM(t.clinical_diagnosis), ''), NULLIF(TRIM(t.animal_condition), ''), 'Nespecifikuota liga') AS disease_name,
     d.code AS disease_code,
     t.clinical_diagnosis,
-    
-    -- FIX: Always show "Patenkinama" for animal condition (8. Gyvūno būklė)
-    COALESCE(t.animal_condition, 'Patenkinama') AS animal_condition,
-    
-    -- FIX: Use treatment registration date as first symptoms date (7. Pirmųjų ligos požymių data)
-    COALESCE(t.first_symptoms_date, t.reg_date) AS first_symptoms_date,
-    
-    -- FIX: Show temperature from visit in tests field (9. Atlikti tyrimai)
-    COALESCE(
-        t.tests,
-        CASE 
-            WHEN av.temperature IS NOT NULL 
-            THEN 'Temperatūra: ' || av.temperature::text || '°C'
-            ELSE NULL
-        END
-    ) AS tests,
-    
+    t.animal_condition,
+    t.first_symptoms_date,
+    t.tests,
     t.services,
     p.name AS medicine_name,
     p.id AS medicine_id,
@@ -253,23 +267,8 @@ SELECT
         THEN (t.withdrawal_until_milk - CURRENT_DATE)
         ELSE 0
     END AS withdrawal_days_milk,
-    
-    -- FIX: Show "Pasveiko" only if this is the last visit for this animal (13. Ligos baigtis)
-    CASE 
-        WHEN t.outcome IS NOT NULL THEN t.outcome
-        WHEN NOT EXISTS (
-            SELECT 1 
-            FROM animal_visits av2 
-            WHERE av2.animal_id = t.animal_id 
-              AND av2.visit_datetime > av.visit_datetime
-              AND av2.status = 'Baigtas'
-        ) THEN 'Pasveiko'
-        ELSE NULL
-    END AS treatment_outcome,
-    
-    -- FIX: Show user's full name (14. Veterinarijos gydytojas)
+    t.outcome AS treatment_outcome,
     COALESCE(u.full_name, t.vet_name, 'Nenurodyta') AS veterinarian,
-    
     t.notes,
     'planned_medication' AS medication_source
 FROM public.treatments t
@@ -284,14 +283,9 @@ WHERE av.planned_medications IS NOT NULL
 
 ORDER BY registration_date DESC, created_at DESC;
 
-COMMENT ON VIEW public.vw_treated_animals_detailed IS 'Complete report view with all fixes:
-1. (14) Veterinarian name from users table via created_by_user_id
-2. (7) First symptoms date defaults to treatment registration date
-3. (8) Animal condition defaults to Patenkinama
-4. (9) Tests field shows temperature from visit
-5. (13) Treatment outcome shows Pasveiko only for last visit';
+COMMENT ON VIEW public.vw_treated_animals_detailed IS 'Detailed view of treated animals with one row per medication. Veterinarian name comes from users table via created_by_user_id.';
 
--- Update process_visit_medications function to set created_by_user_id
+-- STEP 5: Update the trigger function
 CREATE OR REPLACE FUNCTION public.process_visit_medications()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -371,7 +365,6 @@ BEGIN
       -- Check if batch_id is provided
       IF v_medication->>'batch_id' IS NOT NULL AND v_medication->>'batch_id' != '' THEN
         -- Use the specified batch
-        -- NOTE: Stock deduction happens automatically via trigger_update_batch_qty_left trigger
         INSERT INTO usage_items (
           farm_id,
           treatment_id,
@@ -386,11 +379,11 @@ BEGIN
           (v_medication->>'product_id')::uuid,
           (v_medication->>'batch_id')::uuid,
           v_requested_qty,
-          v_unit_value::unit,
+          v_unit_value,
           COALESCE(v_medication->>'purpose', 'treatment')
         );
 
-        RAISE NOTICE 'Created usage_item for % % of product % (stock deducted by trigger)', v_requested_qty, v_unit_value, v_product.name;
+        RAISE NOTICE 'Created usage_item for batch %', v_medication->>'batch_id';
       ELSE
         RAISE NOTICE 'No batch specified for product %, skipping', v_product.name;
       END IF;
@@ -405,14 +398,30 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.process_visit_medications() IS 'Automatically creates usage_items and deducts from batch stock when visit status changes to Baigtas. Sets created_by_user_id from visit.';
+COMMENT ON FUNCTION public.process_visit_medications() IS 'Automatically creates usage_items when visit status changes to Baigtas. Sets created_by_user_id from visit.';
 
--- Create the trigger to call the function when visit status changes
-DROP TRIGGER IF EXISTS process_visit_medications_trigger ON public.animal_visits;
+-- STEP 6: Final check - show sample data
+DO $$
+BEGIN
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'FINAL CHECK - SHOWING SAMPLE DATA:';
+    RAISE NOTICE '========================================';
+    RAISE NOTICE 'Check the Results tab below to see:';
+    RAISE NOTICE '1. Recent treatments with user info';
+    RAISE NOTICE '2. Users table data';
+    RAISE NOTICE '========================================';
+END $$;
 
-CREATE TRIGGER process_visit_medications_trigger
-  BEFORE UPDATE ON public.animal_visits
-  FOR EACH ROW
-  EXECUTE FUNCTION public.process_visit_medications();
-
-COMMENT ON TRIGGER process_visit_medications_trigger ON public.animal_visits IS 'Automatically processes planned medications when visit status changes to Baigtas';
+-- Show recent treatments
+SELECT 
+    t.id,
+    t.reg_date,
+    t.vet_name AS old_vet_name_field,
+    t.created_by_user_id,
+    u.full_name AS user_full_name,
+    u.email AS user_email,
+    t.created_at
+FROM treatments t
+LEFT JOIN users u ON t.created_by_user_id = u.id
+ORDER BY t.created_at DESC
+LIMIT 10;

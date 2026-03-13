@@ -1679,7 +1679,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     temperature_measured_at: visitToEdit?.temperature_measured_at?.slice(0, 16) || new Date().toISOString().slice(0, 16),
     status: visitToEdit?.status || 'Planuojamas' as VisitStatus,
     notes: visitToEdit?.notes || '',
-    vet_name: visitToEdit?.vet_name || '',
+    vet_name: visitToEdit?.vet_name || user?.full_name || user?.email || '',
     next_visit_required: visitToEdit?.next_visit_required || false,
     next_visit_date: visitToEdit?.next_visit_date?.slice(0, 16) || '',
     treatment_required: visitToEdit?.treatment_required || false,
@@ -2653,12 +2653,14 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 }));
 
                 return {
+                  farm_id: selectedFarm!.id,
                   animal_id: animalId,
                   visit_datetime: `${daySchedule.date}T10:00:00`,
                   procedures: ['Gydymas'],
                   status: 'Planuojamas',
                   notes: `Pakartotinis gydymas (${treatmentData.disease_id ? diseases.find(d => d.id === treatmentData.disease_id)?.name || '' : 'liga nenurodyta'})\nVaistai: ${medicationNames}\n\n⚠️ Įveskite vaistų kiekį prieš užbaigiant vizitą`,
                   vet_name: formData.vet_name || null,
+                  created_by_user_id: user?.id || null,
                   next_visit_required: false,
                   treatment_required: true,
                   related_treatment_id: treatmentRecord.id,

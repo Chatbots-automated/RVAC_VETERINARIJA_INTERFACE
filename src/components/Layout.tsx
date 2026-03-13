@@ -247,10 +247,10 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
                     e.currentTarget.style.display = 'none';
                   }}
                 />
-                <span>© 2025 ŽŪB Berčiunai. Visos teisės saugomos.</span>
+                <span>© 2025 RVAC. Visos teisės saugomos.</span>
               </div>
               <div className="text-xs text-gray-500">
-                VetStock Sistema · Versija 1.0.0
+                Veterinarijos Valdymo Sistema · Versija 1.0.0
               </div>
             </div>
           </div>

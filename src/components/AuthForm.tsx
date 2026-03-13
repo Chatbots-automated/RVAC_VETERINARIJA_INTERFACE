@@ -36,7 +36,7 @@ export function AuthForm() {
               </div>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              GRATO TESTAS
+              RVAC
             </h1>
             <p className="text-emerald-50">
               Veterinarijos Valdymo Sistema
@@ -133,7 +133,7 @@ export function AuthForm() {
         </div>
 
         <div className="mt-6 text-center text-sm text-white/80">
-          <p>© 2025 ŽŪB Berčiunai · VetStock Sistema v1.0.0</p>
+          <p>© 2025 RVAC · Veterinarijos Valdymo Sistema v1.0.0</p>
         </div>
       </div>
     </div>
