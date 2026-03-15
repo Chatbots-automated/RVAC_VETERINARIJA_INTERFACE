@@ -6908,7 +6908,8 @@ COMMENT ON VIEW "public"."vw_treatment_roi_analysis" IS 'Treatment ROI analysis 
 --
 
 CREATE OR REPLACE VIEW "public"."vw_vet_drug_journal" AS
- SELECT "b"."id" AS "batch_id",
+ SELECT "b"."farm_id",
+    "b"."id" AS "batch_id",
     "b"."product_id",
     "b"."created_at" AS "receipt_date",
     "p"."name" AS "product_name",
@@ -6920,14 +6921,11 @@ CREATE OR REPLACE VIEW "public"."vw_vet_drug_journal" AS
     "b"."expiry_date",
     "b"."received_qty" AS "quantity_received",
     "p"."primary_pack_unit" AS "unit",
-    COALESCE(( SELECT "sum"("ui"."qty") AS "sum"
-           FROM "public"."usage_items" "ui"
-          WHERE ("ui"."batch_id" = "b"."id")), (0)::numeric) AS "quantity_used",
-    ("b"."received_qty" - COALESCE(( SELECT "sum"("ui"."qty") AS "sum"
-           FROM "public"."usage_items" "ui"
-          WHERE ("ui"."batch_id" = "b"."id")), (0)::numeric)) AS "quantity_remaining",
+    ("b"."received_qty" - "b"."qty_left") AS "quantity_used",
+    "b"."qty_left" AS "quantity_remaining",
     "b"."doc_number" AS "invoice_number",
-    "b"."doc_date" AS "invoice_date"
+    "b"."doc_date" AS "invoice_date",
+    'Invoice'::"text" AS "doc_title"
    FROM (("public"."batches" "b"
      JOIN "public"."products" "p" ON (("b"."product_id" = "p"."id")))
      LEFT JOIN "public"."suppliers" "s" ON (("b"."supplier_id" = "s"."id")))

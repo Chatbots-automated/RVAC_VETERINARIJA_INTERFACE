@@ -30,6 +30,7 @@ import {
 } from './ReportTemplates';
 import { SearchableSelect } from './SearchableSelect';
 import { InvoiceViewer } from './InvoiceViewer';
+import { exportReportToExcel, getColumnsForReportType, getReportTitle } from '../lib/reportExport';
 
 interface AnalyticsData {
   totalAnimals: number;
@@ -468,21 +469,14 @@ export function Reports() {
   };
 
   const handleExport = () => {
-    const headers = data.length > 0 ? Object.keys(data[0]) : [];
-    const csv = [
-      headers.join(','),
-      ...data.map(row => headers.map(header => {
-        const value = row[header];
-        return typeof value === 'string' && value.includes(',') ? `"${value}"` : value;
-      }).join(','))
-    ].join('\n');
+    if (data.length === 0) {
+      alert('Nėra duomenų eksportavimui');
+      return;
+    }
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${reportType}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    const columns = getColumnsForReportType(reportType);
+    const title = getReportTitle(reportType);
+    exportReportToExcel(data, reportType, columns, title);
   };
 
   const handlePrint = () => {

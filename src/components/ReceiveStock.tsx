@@ -5,7 +5,7 @@ import { normalizeNumberInput } from '../lib/helpers';
 import { useAuth } from '../contexts/AuthContext';
 import { useFarm } from '../contexts/FarmContext';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
-import { Plus, Check, Upload, FileText, X, AlertCircle, CheckCircle, PlusCircle, CreditCard as Edit2, Save, AlertTriangle } from 'lucide-react';
+import { Plus, Check, Upload, FileText, X, AlertCircle, CheckCircle, PlusCircle, CreditCard as Edit2, Save, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getSubcategories, getNestedSubcategories, hasSubcategories, hasNestedSubcategories } from '../lib/categoryHierarchy';
 
 export function ReceiveStock() {
@@ -16,10 +16,11 @@ export function ReceiveStock() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState('');
-  const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [invoicesData, setInvoicesData] = useState<any[]>([]);
+  const [currentInvoiceIndex, setCurrentInvoiceIndex] = useState<number>(0);
   const [matchedProducts, setMatchedProducts] = useState<Map<number, Product | null>>(new Map());
   const [editedItems, setEditedItems] = useState<Map<number, any>>(new Map());
   const [itemsToReceive, setItemsToReceive] = useState<Map<number, boolean>>(new Map());
@@ -32,6 +33,7 @@ export function ReceiveStock() {
     subcategory_2: '',
     primary_pack_unit: 'ml' as const,
     primary_pack_size: '',
+    package_weight_g: '',
     active_substance: '',
     withdrawal_days_meat: '',
     withdrawal_days_milk: '',
@@ -45,7 +47,7 @@ export function ReceiveStock() {
   const [bulkReceiving, setBulkReceiving] = useState(false);
   const [editingHeader, setEditingHeader] = useState(false);
   const [headerData, setHeaderData] = useState<any>(null);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfUrls, setPdfUrls] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     product_id: '',
@@ -107,18 +109,25 @@ export function ReceiveStock() {
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && file.type === 'application/pdf') {
-      setSelectedFile(file);
-      setUploadStatus('idle');
-      setUploadMessage('');
-
-      const url = URL.createObjectURL(file);
-      setPdfUrl(url);
-    } else {
-      alert('Prašome pasirinkti PDF failą');
+    const files = Array.from(e.target.files || []);
+    const pdfFiles = files.filter(file => file.type === 'application/pdf');
+    
+    if (pdfFiles.length === 0) {
+      alert('Prašome pasirinkti bent vieną PDF failą');
       e.target.value = '';
+      return;
     }
+
+    if (pdfFiles.length !== files.length) {
+      alert(`${files.length - pdfFiles.length} failų praleidžiama (tik PDF palaikomi)`);
+    }
+
+    setSelectedFiles(pdfFiles);
+    setUploadStatus('idle');
+    setUploadMessage('');
+
+    const urls = pdfFiles.map(file => URL.createObjectURL(file));
+    setPdfUrls(urls);
   };
 
   const searchProductMatch = async (itemDescription: string): Promise<Product | null> => {
@@ -130,87 +139,109 @@ export function ReceiveStock() {
     return match || null;
   };
 
+  const sanitizeFilename = (filename: string): string => {
+    return filename
+      .replace(/[()]/g, '')
+      .replace(/[^\w\s.-]/g, '_')
+      .replace(/\s+/g, '_')
+      .replace(/_+/g, '_');
+  };
+
+  const parseInvoiceFile = async (file: File): Promise<any> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const sanitizedFilename = sanitizeFilename(file.name);
+
+    const response = await fetch('https://n8n-up8s.onrender.com/webhook/36549f46-a08b-4790-bf56-40cdc919e4c0', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${sanitizedFilename}"`,
+      },
+      body: arrayBuffer,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Server error response:', errorText);
+      throw new Error(`Serverio klaida: ${response.status} (${file.name})`);
+    }
+
+    const responseText = await response.text();
+    console.log(`Raw webhook response for ${file.name}:`, responseText);
+
+    if (!responseText || responseText.trim() === '') {
+      throw new Error(`Serveris grąžino tuščią atsakymą (${file.name})`);
+    }
+
+    let data;
+    try {
+      data = JSON.parse(responseText);
+    } catch (jsonError) {
+      console.error('JSON parse error:', jsonError);
+      console.error('Response text:', responseText);
+      throw new Error(`Nepavyko perskaityti serverio atsakymo (${file.name})`);
+    }
+
+    let invoiceObject;
+    if (Array.isArray(data) && data.length > 0) {
+      invoiceObject = data[0];
+    } else if (data && typeof data === 'object' && !Array.isArray(data)) {
+      invoiceObject = data;
+    } else {
+      throw new Error(`Netinkamas atsakymo formatas (${file.name})`);
+    }
+
+    if (!invoiceObject.items || !Array.isArray(invoiceObject.items)) {
+      throw new Error(`Atsakyme nerasta prekių sąrašo (${file.name})`);
+    }
+
+    return { ...invoiceObject, filename: file.name };
+  };
+
   const handleFileUpload = async () => {
-    if (!selectedFile) return;
+    if (selectedFiles.length === 0) return;
 
     setUploadStatus('uploading');
-    setUploadMessage('Įkeliama...');
+    setUploadMessage(`Apdorojama ${selectedFiles.length} failų...`);
 
     try {
-      const arrayBuffer = await selectedFile.arrayBuffer();
+      const parsePromises = selectedFiles.map(file => parseInvoiceFile(file));
+      const results = await Promise.allSettled(parsePromises);
 
-      const sanitizeFilename = (filename: string): string => {
-        return filename
-          .replace(/[()]/g, '')
-          .replace(/[^\w\s.-]/g, '_')
-          .replace(/\s+/g, '_')
-          .replace(/_+/g, '_');
-      };
+      const successfulInvoices: any[] = [];
+      const failedFiles: string[] = [];
 
-      const sanitizedFilename = sanitizeFilename(selectedFile.name);
-
-      const response = await fetch('https://n8n-up8s.onrender.com/webhook/36549f46-a08b-4790-bf56-40cdc919e4c0', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${sanitizedFilename}"`,
-        },
-        body: arrayBuffer,
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled') {
+          successfulInvoices.push(result.value);
+        } else {
+          failedFiles.push(`${selectedFiles[index].name}: ${result.reason.message}`);
+        }
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Server error response:', errorText);
-        throw new Error(`Serverio klaida: ${response.status}`);
+      if (successfulInvoices.length === 0) {
+        throw new Error(`Visi failai nepavyko apdoroti:\n${failedFiles.join('\n')}`);
       }
 
-      const responseText = await response.text();
-      console.log('Raw webhook response:', responseText);
+      setInvoicesData(successfulInvoices);
+      setCurrentInvoiceIndex(0);
 
-      if (!responseText || responseText.trim() === '') {
-        throw new Error('Serveris grąžino tuščią atsakymą');
-      }
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-      } catch (jsonError) {
-        console.error('JSON parse error:', jsonError);
-        console.error('Response text:', responseText);
-        throw new Error('Nepavyko perskaityti serverio atsakymo. Patikrinkite, ar webhook veikia teisingai.');
-      }
-
-      console.log('Parsed webhook response:', data);
-
-      let invoiceObject;
-      if (Array.isArray(data) && data.length > 0) {
-        invoiceObject = data[0];
-      } else if (data && typeof data === 'object' && !Array.isArray(data)) {
-        invoiceObject = data;
-      } else {
-        throw new Error('Netinkamas atsakymo formatas');
-      }
-
-      if (!invoiceObject.items || !Array.isArray(invoiceObject.items)) {
-        throw new Error('Atsakyme nerasta prekių sąrašo');
-      }
-
-      setInvoiceData(invoiceObject);
+      const firstInvoice = successfulInvoices[0];
       setHeaderData({
-        invoice_number: invoiceObject.invoice.number,
-        invoice_date: invoiceObject.invoice.date,
-        supplier_name: invoiceObject.supplier.name,
-        supplier_code: invoiceObject.supplier.code,
-        supplier_vat: invoiceObject.supplier.vat_code,
-        total_net: invoiceObject.invoice.total_net,
-        total_vat: invoiceObject.invoice.total_vat,
-        total_gross: invoiceObject.invoice.total_gross,
+        invoice_number: firstInvoice.invoice.number,
+        invoice_date: firstInvoice.invoice.date,
+        supplier_name: firstInvoice.supplier.name,
+        supplier_code: firstInvoice.supplier.code,
+        supplier_vat: firstInvoice.supplier.vat_code,
+        total_net: firstInvoice.invoice.total_net,
+        total_vat: firstInvoice.invoice.total_vat,
+        total_gross: firstInvoice.invoice.total_gross,
       });
 
       const matches = new Map<number, Product | null>();
       const receiveFlags = new Map<number, boolean>();
-      for (let i = 0; i < invoiceObject.items.length; i++) {
-        const match = await searchProductMatch(invoiceObject.items[i].description);
+      for (let i = 0; i < firstInvoice.items.length; i++) {
+        const match = await searchProductMatch(firstInvoice.items[i].description);
         matches.set(i, match);
         receiveFlags.set(i, true);
       }
@@ -218,7 +249,9 @@ export function ReceiveStock() {
       setItemsToReceive(receiveFlags);
 
       setUploadStatus('success');
-      setUploadMessage(`PDF sėkmingai įkeltas! Rasta ${invoiceObject.items.length} prekių.`);
+      const successMsg = `Sėkmingai apdorota ${successfulInvoices.length} failų! Rasta ${firstInvoice.items.length} prekių pirmoje sąskaitoje.`;
+      const warningMsg = failedFiles.length > 0 ? `\n\nKlaidos (${failedFiles.length}):\n${failedFiles.join('\n')}` : '';
+      setUploadMessage(successMsg + warningMsg);
     } catch (error: any) {
       setUploadStatus('error');
       setUploadMessage(`Klaida: ${error.message}`);
@@ -226,14 +259,13 @@ export function ReceiveStock() {
   };
 
   const handleRemoveFile = () => {
-    if (pdfUrl) {
-      URL.revokeObjectURL(pdfUrl);
-      setPdfUrl(null);
-    }
-    setSelectedFile(null);
+    pdfUrls.forEach(url => URL.revokeObjectURL(url));
+    setPdfUrls([]);
+    setSelectedFiles([]);
     setUploadStatus('idle');
     setUploadMessage('');
-    setInvoiceData(null);
+    setInvoicesData([]);
+    setCurrentInvoiceIndex(0);
     setMatchedProducts(new Map());
     setEditedItems(new Map());
     setItemsToReceive(new Map());
@@ -241,12 +273,46 @@ export function ReceiveStock() {
     setEditingHeader(false);
   };
 
+  const switchToInvoice = async (index: number) => {
+    if (index < 0 || index >= invoicesData.length) return;
+
+    setCurrentInvoiceIndex(index);
+    const invoice = invoicesData[index];
+
+    setHeaderData({
+      invoice_number: invoice.invoice.number,
+      invoice_date: invoice.invoice.date,
+      supplier_name: invoice.supplier.name,
+      supplier_code: invoice.supplier.code,
+      supplier_vat: invoice.supplier.vat_code,
+      total_net: invoice.invoice.total_net,
+      total_vat: invoice.invoice.total_vat,
+      total_gross: invoice.invoice.total_gross,
+    });
+
+    const matches = new Map<number, Product | null>();
+    const receiveFlags = new Map<number, boolean>();
+    for (let i = 0; i < invoice.items.length; i++) {
+      const match = await searchProductMatch(invoice.items[i].description);
+      matches.set(i, match);
+      receiveFlags.set(i, true);
+    }
+    setMatchedProducts(matches);
+    setItemsToReceive(receiveFlags);
+    setEditedItems(new Map());
+  };
+
+  const getCurrentInvoice = () => {
+    return invoicesData.length > 0 ? invoicesData[currentInvoiceIndex] : null;
+  };
+
   const handleSaveHeader = () => {
-    if (headerData && invoiceData) {
-      setInvoiceData({
-        ...invoiceData,
+    if (headerData && invoicesData.length > 0) {
+      const updatedInvoices = [...invoicesData];
+      updatedInvoices[currentInvoiceIndex] = {
+        ...updatedInvoices[currentInvoiceIndex],
         invoice: {
-          ...invoiceData.invoice,
+          ...updatedInvoices[currentInvoiceIndex].invoice,
           number: headerData.invoice_number,
           date: headerData.invoice_date,
           total_net: parseFloat(headerData.total_net) || 0,
@@ -254,12 +320,13 @@ export function ReceiveStock() {
           total_gross: parseFloat(headerData.total_gross) || 0,
         },
         supplier: {
-          ...invoiceData.supplier,
+          ...updatedInvoices[currentInvoiceIndex].supplier,
           name: headerData.supplier_name,
           code: headerData.supplier_code,
           vat_code: headerData.supplier_vat,
         },
-      });
+      };
+      setInvoicesData(updatedInvoices);
     }
     setEditingHeader(false);
   };
@@ -270,6 +337,9 @@ export function ReceiveStock() {
   };
 
   const handleItemEdit = (index: number, field: string, value: any) => {
+    const invoiceData = getCurrentInvoice();
+    if (!invoiceData) return;
+    
     const currentItem = invoiceData.items[index];
     const edited = editedItems.get(index) || { ...currentItem };
     edited[field] = value;
@@ -292,8 +362,11 @@ export function ReceiveStock() {
     setNewProductForm({
       name: itemData.description || '',
       category: 'medicines',
+      subcategory: '',
+      subcategory_2: '',
       primary_pack_unit: 'ml',
       primary_pack_size: itemData.package_size?.toString() || '',
+      package_weight_g: '',
       active_substance: '',
       withdrawal_days_meat: '0',
       withdrawal_days_milk: '0',
@@ -316,13 +389,20 @@ export function ReceiveStock() {
     }
 
     try {
+      if (!selectedFarm) {
+        alert('Pasirinkite ūkį');
+        return;
+      }
+
       const productData = {
+        farm_id: selectedFarm.id,
         name: newProductForm.name,
         category: newProductForm.category,
         subcategory: newProductForm.subcategory || null,
         subcategory_2: newProductForm.subcategory_2 || null,
         primary_pack_unit: newProductForm.primary_pack_unit,
         primary_pack_size: newProductForm.primary_pack_size ? parseFloat(newProductForm.primary_pack_size) : null,
+        package_weight_g: newProductForm.package_weight_g ? parseFloat(newProductForm.package_weight_g) : null,
         active_substance: newProductForm.active_substance || null,
         withdrawal_days_meat: (['medicines', 'svirkstukai'].includes(newProductForm.category) && newProductForm.withdrawal_days_meat) ? parseInt(newProductForm.withdrawal_days_meat) : null,
         withdrawal_days_milk: (['medicines', 'svirkstukai'].includes(newProductForm.category) && newProductForm.withdrawal_days_milk) ? parseInt(newProductForm.withdrawal_days_milk) : null,
@@ -405,8 +485,11 @@ export function ReceiveStock() {
       setNewProductForm({
         name: '',
         category: 'medicines',
+        subcategory: '',
+        subcategory_2: '',
         primary_pack_unit: 'ml',
         primary_pack_size: '',
+        package_weight_g: '',
         active_substance: '',
         withdrawal_days_meat: '',
         withdrawal_days_milk: '',
@@ -421,6 +504,7 @@ export function ReceiveStock() {
   };
 
   const handleBulkReceive = async () => {
+    const invoiceData = getCurrentInvoice();
     if (!invoiceData || !invoiceData.supplier) {
       alert('Nėra sąskaitos duomenų');
       return;
@@ -467,6 +551,7 @@ export function ReceiveStock() {
           const { data: newSupplier, error: supplierError } = await supabase
             .from('suppliers')
             .insert({
+              farm_id: selectedFarm.id,
               name: invoiceData.supplier.name,
               code: invoiceData.supplier.code || null,
               vat_code: invoiceData.supplier.vat_code || null,
@@ -496,7 +581,7 @@ export function ReceiveStock() {
           total_vat: parseFloat(invoiceData.invoice.total_vat) || 0,
           total_gross: parseFloat(invoiceData.invoice.total_gross) || 0,
           vat_rate: parseFloat(invoiceData.invoice.vat_rate) || 0,
-          pdf_filename: selectedFile?.name || null,
+          pdf_filename: invoiceData.filename || null,
         })
         .select()
         .single();
@@ -530,6 +615,7 @@ export function ReceiveStock() {
         const unitPrice = qty > 0 ? (totalPrice / qty) : 0;
 
         stockEntries.push({
+          farm_id: selectedFarm.id,
           product_id: matched.id,
           lot: itemData.batch || bulkReceiveData.lot || null,
           mfg_date: null,
@@ -547,6 +633,7 @@ export function ReceiveStock() {
 
         // Store invoice item data for later insertion (use webhook's original values)
         invoiceItemsEntries.push({
+          farm_id: selectedFarm.id,
           invoice_id: invoice.id,
           product_id: matched.id,
           line_no: itemData.line_no,
@@ -554,7 +641,7 @@ export function ReceiveStock() {
           sku: itemData.sku,
           quantity: qty,
           unit_price: unitPrice,
-          total_price: totalPrice,  // This uses net from extraction
+          total_price: totalPrice,
         });
       }
 
@@ -578,12 +665,34 @@ export function ReceiveStock() {
       if (itemsError) throw itemsError;
 
       alert(`Sėkmingai priimta ${stockEntries.length} produktų!`);
-      setInvoiceData(null);
-      setMatchedProducts(new Map());
-      setEditedItems(new Map());
-      setItemsToReceive(new Map());
-      setSelectedFile(null);
-      setUploadStatus('idle');
+      
+      // Remove current invoice from the list
+      const updatedInvoices = invoicesData.filter((_, idx) => idx !== currentInvoiceIndex);
+      const updatedFiles = selectedFiles.filter((_, idx) => idx !== currentInvoiceIndex);
+      const updatedUrls = pdfUrls.filter((_, idx) => idx !== currentInvoiceIndex);
+      
+      // Revoke the current PDF URL
+      if (pdfUrls[currentInvoiceIndex]) {
+        URL.revokeObjectURL(pdfUrls[currentInvoiceIndex]);
+      }
+      
+      setInvoicesData(updatedInvoices);
+      setSelectedFiles(updatedFiles);
+      setPdfUrls(updatedUrls);
+      
+      // Reset to first invoice or clear if none left
+      if (updatedInvoices.length > 0) {
+        const newIndex = Math.min(currentInvoiceIndex, updatedInvoices.length - 1);
+        await switchToInvoice(newIndex);
+      } else {
+        setCurrentInvoiceIndex(0);
+        setMatchedProducts(new Map());
+        setEditedItems(new Map());
+        setItemsToReceive(new Map());
+        setHeaderData(null);
+        setUploadStatus('idle');
+      }
+      
       setBulkReceiveData({
         lot: '',
       });
@@ -770,22 +879,47 @@ export function ReceiveStock() {
     }
   };
 
+  const invoiceData = getCurrentInvoice();
+  const currentPdfUrl = pdfUrls.length > 0 ? pdfUrls[currentInvoiceIndex] : null;
+
   return (
-    <div className={invoiceData && pdfUrl ? "flex gap-6 h-[calc(100vh-8rem)]" : "max-w-3xl mx-auto"}>
-      {invoiceData && pdfUrl && (
-        <div className="w-1/2 flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-4 overflow-hidden">
-          <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-blue-600" />
-            PDF Sąskaita
-          </h3>
+    <div className={invoiceData && currentPdfUrl ? "flex gap-6 h-[calc(100vh-8rem)]" : "max-w-3xl mx-auto"}>
+      {invoiceData && currentPdfUrl && (
+        <div className="w-1/2 flex-shrink-0 bg-white rounded-xl shadow-sm border border-gray-100 p-4 overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              PDF Sąskaita {invoicesData.length > 1 && `(${currentInvoiceIndex + 1}/${invoicesData.length})`}
+            </h3>
+            {invoicesData.length > 1 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => switchToInvoice(currentInvoiceIndex - 1)}
+                  disabled={currentInvoiceIndex === 0}
+                  className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Ankstesnė sąskaita"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => switchToInvoice(currentInvoiceIndex + 1)}
+                  disabled={currentInvoiceIndex === invoicesData.length - 1}
+                  className="p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  title="Kita sąskaita"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            )}
+          </div>
           <iframe
-            src={pdfUrl}
-            className="w-full h-[calc(100%-3rem)] border-2 border-gray-200 rounded-lg"
+            src={currentPdfUrl}
+            className="w-full flex-1 border-2 border-gray-200 rounded-lg"
             title="Invoice PDF"
           />
         </div>
       )}
-      <div className={invoiceData && pdfUrl ? "flex-1 overflow-y-auto bg-white rounded-xl shadow-sm border border-gray-100" : "bg-white rounded-xl shadow-sm border border-gray-100"}>
+      <div className={invoiceData && currentPdfUrl ? "flex-1 overflow-y-auto bg-white rounded-xl shadow-sm border border-gray-100" : "bg-white rounded-xl shadow-sm border border-gray-100"}>
         <div className="p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="bg-blue-50 p-2 rounded-lg">
@@ -815,7 +949,7 @@ export function ReceiveStock() {
             </div>
           </div>
 
-          {!selectedFile ? (
+          {selectedFiles.length === 0 ? (
             <div className="border-2 border-dashed border-blue-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
               <label className="cursor-pointer">
                 <input
@@ -823,43 +957,71 @@ export function ReceiveStock() {
                   accept="application/pdf"
                   onChange={handleFileSelect}
                   className="hidden"
+                  multiple
                 />
                 <FileText className="w-12 h-12 text-blue-400 mx-auto mb-3" />
                 <p className="text-sm font-medium text-gray-700 mb-1">
-                  Spustelėkite arba tempkite PDF failą čia
+                  Spustelėkite arba tempkite PDF failus čia
                 </p>
-                <p className="text-xs text-gray-500">Palaikomi tik PDF failai</p>
+                <p className="text-xs text-gray-500">Palaikomi tik PDF failai (galima pasirinkti kelis)</p>
               </label>
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-center gap-3 p-4 bg-white border-2 border-blue-300 rounded-lg">
-                <FileText className="w-8 h-8 text-blue-600 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{selectedFile.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {(selectedFile.size / 1024).toFixed(1)} KB
-                  </p>
-                </div>
+              <div className="max-h-40 overflow-y-auto space-y-2 p-2 bg-gray-50 rounded-lg">
+                {selectedFiles.map((file, idx) => {
+                  const isProcessed = idx < invoicesData.length;
+                  const isCurrent = idx === currentInvoiceIndex && invoicesData.length > 0;
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                        isCurrent 
+                          ? 'bg-blue-100 border-blue-400 border-2' 
+                          : isProcessed 
+                          ? 'bg-white border-blue-200' 
+                          : 'bg-white border-gray-200'
+                      }`}
+                    >
+                      <FileText className={`w-6 h-6 flex-shrink-0 ${isCurrent ? 'text-blue-700' : 'text-blue-600'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-medium truncate text-sm ${isCurrent ? 'text-blue-900' : 'text-gray-900'}`}>
+                          {file.name}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {(file.size / 1024).toFixed(1)} KB
+                          {isCurrent && ' • Dabartinė'}
+                          {isProcessed && !isCurrent && ' • Apdorota'}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                <span className="text-sm font-medium text-gray-700">
+                  Pasirinkta failų: {selectedFiles.length}
+                </span>
                 <button
                   onClick={handleRemoveFile}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="px-3 py-1 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   disabled={uploadStatus === 'uploading'}
                 >
-                  <X className="w-5 h-5" />
+                  Išvalyti
                 </button>
               </div>
 
               {uploadMessage && (
-                <div className={`px-4 py-3 rounded-lg flex items-center gap-2 ${
+                <div className={`px-4 py-3 rounded-lg flex items-start gap-2 ${
                   uploadStatus === 'success'
                     ? 'bg-blue-50 border border-blue-200 text-blue-700'
                     : uploadStatus === 'error'
                     ? 'bg-red-50 border border-red-200 text-red-700'
                     : 'bg-blue-50 border border-blue-200 text-blue-700'
                 }`}>
-                  {uploadStatus === 'success' && <Check className="w-5 h-5" />}
-                  <span className="text-sm font-medium">{uploadMessage}</span>
+                  {uploadStatus === 'success' && <Check className="w-5 h-5 flex-shrink-0" />}
+                  <span className="text-sm font-medium whitespace-pre-line">{uploadMessage}</span>
                 </div>
               )}
 
@@ -869,7 +1031,7 @@ export function ReceiveStock() {
                 className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 <Upload className="w-5 h-5" />
-                {uploadStatus === 'uploading' ? 'Įkeliama...' : 'Įkelti PDF'}
+                {uploadStatus === 'uploading' ? 'Apdorojama...' : `Apdoroti ${selectedFiles.length} failų`}
               </button>
             </div>
           )}
@@ -1541,62 +1703,6 @@ export function ReceiveStock() {
                   </div>
 
                   <div className="md:col-span-2">
-                    <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                      <h4 className="text-sm font-bold text-blue-900 mb-3">Priėmimo duomenys iš sąskaitos</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Pakuočių skaičius
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={newProductForm.package_count}
-                            onChange={(e) => {
-                              const newCount = e.target.value;
-                              setNewProductForm(prev => {
-                                const size = parseFloat(prev.primary_pack_size) || 0;
-                                const count = parseFloat(newCount) || 0;
-                                return {
-                                  ...prev,
-                                  package_count: newCount,
-                                  total_quantity: size && count ? (size * count).toString() : prev.total_quantity
-                                };
-                              });
-                            }}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                            placeholder="5"
-                          />
-                          <p className="text-xs text-gray-500 mt-0.5">kiek pakuočių gauname</p>
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            Viso {newProductForm.primary_pack_size && newProductForm.package_count && (
-                              <span className="text-blue-600 font-bold">(auto)</span>
-                            )}
-                          </label>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={newProductForm.total_quantity}
-                            onChange={(e) => setNewProductForm({ ...newProductForm, total_quantity: normalizeNumberInput(e.target.value) })}
-                            className="w-full px-3 py-2 border border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 bg-blue-50 font-semibold"
-                            placeholder="500"
-                            readOnly={!!(newProductForm.primary_pack_size && newProductForm.package_count)}
-                          />
-                          <p className="text-xs text-blue-600 mt-0.5 font-medium">
-                            {newProductForm.primary_pack_size && newProductForm.package_count ? (
-                              `${newProductForm.package_count} pak × ${newProductForm.primary_pack_size}${newProductForm.primary_pack_unit}`
-                            ) : (
-                              'arba įveskite rankiniu būdu'
-                            )}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Veiklioji medžiaga
                     </label>
@@ -1607,6 +1713,24 @@ export function ReceiveStock() {
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="Pvz: Penicilinas"
                     />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                      Pakuotės svoris (tuščios)
+                      <span className="text-xs text-gray-500 font-normal">g</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={newProductForm.package_weight_g}
+                      onChange={(e) => setNewProductForm({ ...newProductForm, package_weight_g: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="pvz., 45.5"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Tuščios pakuotės svoris gramais. Automatiškai sukuriamas medicininių atliekų įrašas kai visas paketas panaudotas.
+                    </p>
                   </div>
 
                   {(newProductForm.category === 'medicines' || newProductForm.category === 'svirkstukai') && (
@@ -1684,8 +1808,11 @@ export function ReceiveStock() {
                     setNewProductForm({
                       name: '',
                       category: 'medicines',
+                      subcategory: '',
+                      subcategory_2: '',
                       primary_pack_unit: 'ml',
                       primary_pack_size: '',
+                      package_weight_g: '',
                       active_substance: '',
                       withdrawal_days_meat: '',
                       withdrawal_days_milk: '',

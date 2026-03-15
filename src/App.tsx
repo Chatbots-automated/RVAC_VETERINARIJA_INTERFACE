@@ -144,31 +144,33 @@ function App() {
   if (selectedModule === 'islaidos') {
     return (
       <RealtimeProvider>
-        <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50">
-          <div className="max-w-7xl mx-auto p-8">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
-                  <Euro className="w-10 h-10 text-white" />
+        <FarmProvider>
+          <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-50">
+            <div className="max-w-7xl mx-auto p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg">
+                    <Euro className="w-10 h-10 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900">Išlaidų Valdymas</h1>
+                    <p className="text-gray-600">Sąskaitų apskaita ir produktai</p>
+                  </div>
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Išlaidų Valdymas</h1>
-                  <p className="text-gray-600">Finansų apskaita ir kontrolė</p>
-                </div>
+                <button
+                  onClick={() => setSelectedModule(null)}
+                  className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-300 shadow-sm"
+                >
+                  Grįžti
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedModule(null)}
-                className="px-4 py-2 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors border border-gray-300 shadow-sm"
-              >
-                Grįžti
-              </button>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <InvoiceViewer />
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <InvoiceViewer />
+              </div>
             </div>
           </div>
-        </div>
+        </FarmProvider>
       </RealtimeProvider>
     );
   }

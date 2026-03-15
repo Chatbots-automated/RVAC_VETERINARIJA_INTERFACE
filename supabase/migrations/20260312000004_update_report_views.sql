@@ -28,16 +28,8 @@ SELECT
     b.expiry_date,
     b.received_qty AS quantity_received,
     p.primary_pack_unit AS unit,
-    COALESCE((
-        SELECT SUM(ui.qty)
-        FROM public.usage_items ui
-        WHERE ui.batch_id = b.id
-    ), 0) AS quantity_used,
-    (b.received_qty - COALESCE((
-        SELECT SUM(ui.qty)
-        FROM public.usage_items ui
-        WHERE ui.batch_id = b.id
-    ), 0)) AS quantity_remaining,
+    (b.received_qty - b.qty_left) AS quantity_used,
+    b.qty_left AS quantity_remaining,
     b.doc_number AS invoice_number,
     b.doc_date AS invoice_date,
     'Invoice' AS doc_title
