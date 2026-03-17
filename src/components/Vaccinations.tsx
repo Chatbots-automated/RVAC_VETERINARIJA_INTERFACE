@@ -825,7 +825,7 @@ export function Vaccinations() {
         ) : (
           groupedVaccinations.map(group => (
             <div key={group.date} className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 flex items-center justify-between">
+              <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                 <div>
                   <h4 className="text-lg font-bold text-gray-900">{group.dateLabel}</h4>
                   <p className="text-sm text-gray-600">{group.date}</p>

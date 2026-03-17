@@ -24,21 +24,19 @@ export function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-indigo-800 to-blue-900 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptMCAzMGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6TTE2IDE0YzMuMzEgMCA2LTIuNjkgNi02cy0yLjY5LTYtNi02LTYgMi42OS02IDYgMi42OSA2IDYgNnptMCAzMGMzLjMxIDAgNi0yLjY5IDYtNnMtMi42OS02LTYtNi02IDIuNjktNiA2IDIuNjkgNiA2IDZ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-30"></div>
-
-      <div className="w-full max-w-md relative">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-10 text-center">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+          <div className="bg-blue-600 px-8 py-10 text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-20 h-20 rounded-xl bg-white p-4 shadow-lg flex items-center justify-center">
+              <div className="w-20 h-20 rounded-lg bg-white p-4 flex items-center justify-center">
                 <Stethoscope className="w-12 h-12 text-blue-600" />
               </div>
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">
               RVAC
             </h1>
-            <p className="text-blue-50">
+            <p className="text-blue-100">
               Veterinarijos Valdymo Sistema
             </p>
           </div>
@@ -107,7 +105,7 @@ export function AuthForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -124,15 +122,15 @@ export function AuthForm() {
             </form>
           </div>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-8 py-4 border-t border-blue-100">
-            <div className="flex items-center justify-center gap-2 text-sm text-blue-800">
+          <div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
               <Stethoscope className="w-4 h-4" />
               <span>Saugus veterinarijos atsargų valdymas</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 text-center text-sm text-white/80">
+        <div className="mt-6 text-center text-sm text-gray-600">
           <p>© 2025 RVAC · Veterinarijos Valdymo Sistema v1.0.0</p>
         </div>
       </div>

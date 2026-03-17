@@ -225,7 +225,7 @@ export function TreatmentHistory() {
         <div className="space-y-6">
           {treatmentGroups.map((group) => (
             <div key={group.date} className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 px-6 py-4 border-b border-gray-200">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center gap-3">
                   <Calendar className="w-5 h-5 text-blue-600" />
                   <h3 className="text-lg font-bold text-gray-900">{group.dateLabel}</h3>
@@ -245,7 +245,7 @@ export function TreatmentHistory() {
                         <div className="flex-1 space-y-3">
                           <div className="flex items-start gap-4">
                             <div className="flex-shrink-0">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 flex items-center justify-center">
+                              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                                 <Activity className="w-6 h-6 text-blue-600" />
                               </div>
                             </div>
@@ -356,7 +356,7 @@ export function TreatmentHistory() {
                           </div>
 
                           {isExpanded && (
-                            <div className="mt-4 ml-16 space-y-4 animate-slide-down">
+                            <div className="mt-4 ml-16 space-y-4">
                               {treatment.clinical_diagnosis && (
                                 <div className="bg-blue-50 rounded-lg p-4">
                                   <h5 className="text-sm font-bold text-gray-900 mb-2">Klinikinis Diagnozė:</h5>

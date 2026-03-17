@@ -526,23 +526,21 @@ export function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 mb-8">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjEiIHN0cm9rZS13aWR0aD0iMSIvPjwvcGF0dGVybj48L2RlZnM+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNncmlkKSIvPjwvc3ZnPg==')] opacity-30"></div>
-        <div className="relative flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2 flex items-center gap-3">
-              <span className="animate-float">📊</span>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
               Pagrindinis
             </h1>
-            <p className="text-blue-100">VetStock valdymo sistema · Real-time apžvalga</p>
+            <p className="text-gray-600 text-sm">VetStock valdymo sistema</p>
           </div>
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all font-semibold shadow-lg hover:shadow-xl hover:scale-105 active:scale-95">
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
               <Plus className="w-5 h-5" />
               Priimti
             </button>
-            <button className="flex items-center gap-2 px-6 py-3 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 transition-all font-semibold shadow-lg border border-white/30 hover:scale-105 active:scale-95">
+            <button className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-300">
               <Syringe className="w-5 h-5" />
               Gydymas
             </button>
@@ -551,220 +549,186 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="group relative bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 border-2 border-blue-400 hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-100">Iš viso produktų</p>
-              <p className="text-4xl font-black text-white mt-2 drop-shadow-lg">{stats.totalProducts}</p>
-              <p className="text-xs text-blue-100 mt-1">{stats.zeroStock} be atsargų</p>
+              <p className="text-sm font-medium text-gray-600">Iš viso produktų</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalProducts}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats.zeroStock} be atsargų</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30 group-hover:scale-110 transition-transform">
-              <Package className="w-7 h-7 text-white drop-shadow-md" />
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Package className="w-6 h-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="group relative bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg p-6 border-2 border-orange-400 hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-orange-100">Mažos atsargos</p>
-              <p className="text-4xl font-black text-white mt-2 drop-shadow-lg">{stats.lowStock}</p>
-              <p className="text-xs text-orange-100 mt-1">Reikia užsakyti</p>
+              <p className="text-sm font-medium text-gray-600">Mažos atsargos</p>
+              <p className="text-3xl font-bold text-orange-600 mt-2">{stats.lowStock}</p>
+              <p className="text-xs text-gray-500 mt-1">Reikia užsakyti</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30 group-hover:scale-110 transition-transform">
-              <TrendingDown className="w-7 h-7 text-white drop-shadow-md" />
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <TrendingDown className="w-6 h-6 text-orange-600" />
             </div>
           </div>
         </div>
 
-        <div className="group relative bg-gradient-to-br from-red-600 to-pink-600 rounded-2xl shadow-lg p-6 border-2 border-red-400 hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-red-100">Greitai pasibaigs</p>
-              <p className="text-4xl font-black text-white mt-2 drop-shadow-lg">{stats.expiringSoon}</p>
-              <p className="text-xs text-red-100 mt-1">{stats.expiredBatches} jau pasibaigę</p>
+              <p className="text-sm font-medium text-gray-600">Greitai pasibaigs</p>
+              <p className="text-3xl font-bold text-red-600 mt-2">{stats.expiringSoon}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats.expiredBatches} jau pasibaigę</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30 group-hover:scale-110 transition-transform">
-              <AlertTriangle className="w-7 h-7 text-white drop-shadow-md" />
+            <div className="p-3 bg-red-50 rounded-lg">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
           </div>
         </div>
 
-        <div className="group relative bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 border-2 border-emerald-400 hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-105 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/0 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-emerald-100">Bendra vertė</p>
-              <p className="text-4xl font-black text-white mt-2 drop-shadow-lg">{formatCurrencyLT(stats.totalValue)}</p>
-              <p className="text-xs text-emerald-100 mt-1">{stats.totalBatches} partijos</p>
+              <p className="text-sm font-medium text-gray-600">Bendra vertė</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">{formatCurrencyLT(stats.totalValue)}</p>
+              <p className="text-xs text-gray-500 mt-1">{stats.totalBatches} partijos</p>
             </div>
-            <div className="bg-white/20 backdrop-blur-sm p-4 rounded-xl border border-white/30 group-hover:scale-110 transition-transform">
-              <Euro className="w-7 h-7 text-white drop-shadow-md" />
+            <div className="p-3 bg-green-50 rounded-lg">
+              <Euro className="w-6 h-6 text-green-600" />
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="group bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 hover:border-blue-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-100 to-transparent rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-bold text-blue-600 flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full">
-                <ArrowUpRight className="w-3 h-3" />
-              </span>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
-            <p className="text-3xl font-black text-gray-900">{stats.totalAnimals}</p>
-            <p className="text-sm font-medium text-gray-600 mt-1">Gyvūnų registre</p>
           </div>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalAnimals}</p>
+          <p className="text-sm font-medium text-gray-600 mt-1">Gyvūnų registre</p>
         </div>
 
-        <div className="group bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 hover:border-indigo-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-100 to-transparent rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-md">
-                <Users className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-bold text-indigo-600 px-2 py-1 bg-indigo-50 rounded-full">{stats.totalSuppliers}</span>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-indigo-50 rounded-lg">
+              <Users className="w-6 h-6 text-indigo-600" />
             </div>
-            <p className="text-3xl font-black text-gray-900">{stats.totalSuppliers}</p>
-            <p className="text-sm font-medium text-gray-600 mt-1">Tiekėjai</p>
           </div>
+          <p className="text-3xl font-bold text-gray-900">{stats.totalSuppliers}</p>
+          <p className="text-sm font-medium text-gray-600 mt-1">Tiekėjai</p>
         </div>
 
-        <div className="group bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 hover:border-purple-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-100 to-transparent rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-md">
-                <Droplet className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-bold text-purple-600 px-2 py-1 bg-purple-50 rounded-full">{stats.biocidesThisMonth}</span>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-purple-50 rounded-lg">
+              <Droplet className="w-6 h-6 text-purple-600" />
             </div>
-            <p className="text-3xl font-black text-gray-900">{stats.biocidesThisMonth}</p>
-            <p className="text-sm font-medium text-gray-600 mt-1">Biocidai šį mėn.</p>
           </div>
+          <p className="text-3xl font-bold text-gray-900">{stats.biocidesThisMonth}</p>
+          <p className="text-sm font-medium text-gray-600 mt-1">Biocidai šį mėn.</p>
         </div>
 
-        <div className="group bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 hover:border-red-300 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-100 to-transparent rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-500"></div>
-          <div className="relative">
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-3 bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-md">
-                <Trash2 className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xs font-bold text-red-600 px-2 py-1 bg-red-50 rounded-full">{stats.wasteThisMonth}</span>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-3 bg-red-50 rounded-lg">
+              <Trash2 className="w-6 h-6 text-red-600" />
             </div>
-            <p className="text-3xl font-black text-gray-900">{stats.wasteThisMonth}</p>
-            <p className="text-sm font-medium text-gray-600 mt-1">Atliekos šį mėn.</p>
           </div>
+          <p className="text-3xl font-bold text-gray-900">{stats.wasteThisMonth}</p>
+          <p className="text-sm font-medium text-gray-600 mt-1">Atliekos šį mėn.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="glass rounded-2xl shadow-xl p-6 border-2 border-blue-200/50 hover:shadow-2xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-indigo-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
-                <Syringe className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">Gydymai</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Syringe className="w-6 h-6 text-blue-600" />
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-blue-50/50">
-                <span className="text-sm font-medium text-gray-700">Šiandien</span>
-                <span className="text-2xl font-black text-blue-600">{stats.treatmentsToday}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Šią savaitę</span>
-                <span className="text-lg font-bold text-gray-800">{stats.treatmentsThisWeek}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Šį mėnesį</span>
-                <span className="text-lg font-bold text-gray-800">{stats.treatmentsThisMonth}</span>
-              </div>
+            <h3 className="font-semibold text-gray-900">Gydymai</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šiandien</span>
+              <span className="text-xl font-bold text-blue-600">{stats.treatmentsToday}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šią savaitę</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.treatmentsThisWeek}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šį mėnesį</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.treatmentsThisMonth}</span>
             </div>
           </div>
         </div>
 
-        <div className="glass rounded-2xl shadow-xl p-6 border-2 border-cyan-200/50 hover:shadow-2xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-blue-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
-                <ShieldAlert className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">Vakcinacijos</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-cyan-50 rounded-lg">
+              <ShieldAlert className="w-6 h-6 text-cyan-600" />
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-cyan-50/50">
-                <span className="text-sm font-medium text-gray-700">Šiandien</span>
-                <span className="text-2xl font-black text-cyan-600">{stats.vaccinationsToday}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Šią savaitę</span>
-                <span className="text-lg font-bold text-gray-800">{stats.vaccinationsThisWeek}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Šį mėnesį</span>
-                <span className="text-lg font-bold text-gray-800">{stats.vaccinationsThisMonth}</span>
-              </div>
+            <h3 className="font-semibold text-gray-900">Vakcinacijos</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šiandien</span>
+              <span className="text-xl font-bold text-cyan-600">{stats.vaccinationsToday}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šią savaitę</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.vaccinationsThisWeek}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šį mėnesį</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.vaccinationsThisMonth}</span>
             </div>
           </div>
         </div>
 
-        <div className="glass rounded-2xl shadow-xl p-6 border-2 border-amber-200/50 hover:shadow-2xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-400/10 to-orange-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
-                <Calendar className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">Vizitai</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-amber-50 rounded-lg">
+              <Calendar className="w-6 h-6 text-amber-600" />
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-amber-50/50">
-                <span className="text-sm font-medium text-gray-700">Šiandien</span>
-                <span className="text-2xl font-black text-amber-600">{stats.visitsToday}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Šią savaitę</span>
-                <span className="text-lg font-bold text-gray-800">{stats.visitsThisWeek}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Suplanuota</span>
-                <span className="text-lg font-bold text-gray-800">{stats.upcomingVisits}</span>
-              </div>
+            <h3 className="font-semibold text-gray-900">Vizitai</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šiandien</span>
+              <span className="text-xl font-bold text-amber-600">{stats.visitsToday}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Šią savaitę</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.visitsThisWeek}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Suplanuota</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.upcomingVisits}</span>
             </div>
           </div>
         </div>
 
-        <div className="glass rounded-2xl shadow-xl p-6 border-2 border-violet-200/50 hover:shadow-2xl transition-all duration-300 hover:scale-105 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-violet-400/10 to-purple-400/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="relative">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl shadow-lg group-hover:shadow-xl transition-shadow">
-                <Activity className="w-6 h-6 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 text-lg">Sinchronizacijos</h3>
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-3 bg-violet-50 rounded-lg">
+              <Activity className="w-6 h-6 text-violet-600" />
             </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-2 rounded-lg bg-violet-50/50">
-                <span className="text-sm font-medium text-gray-700">Aktyvios</span>
-                <span className="text-2xl font-black text-violet-600">{stats.activeSynchronizations}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Užbaigtos</span>
-                <span className="text-lg font-bold text-gray-800">{stats.completedSynchronizations}</span>
-              </div>
+            <h3 className="font-semibold text-gray-900">Sinchronizacijos</h3>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Aktyvios</span>
+              <span className="text-xl font-bold text-violet-600">{stats.activeSynchronizations}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Užbaigtos</span>
+              <span className="text-lg font-semibold text-gray-800">{stats.completedSynchronizations}</span>
             </div>
           </div>
         </div>
@@ -830,7 +794,7 @@ export function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-sm p-6 border border-blue-200">
+        <div className="bg-blue-50 rounded-lg shadow-sm p-6 border border-blue-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-blue-600 p-2 rounded-lg">
               <PackagePlus className="w-5 h-5 text-white" />
@@ -849,7 +813,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl shadow-sm p-6 border border-indigo-200">
+        <div className="bg-indigo-50 rounded-lg shadow-sm p-6 border border-indigo-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-indigo-600 p-2 rounded-lg">
               <BarChart3 className="w-5 h-5 text-white" />
@@ -869,7 +833,7 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl shadow-sm p-6 border border-rose-200">
+        <div className="bg-rose-50 rounded-lg shadow-sm p-6 border border-rose-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="bg-rose-600 p-2 rounded-lg">
               <Stethoscope className="w-5 h-5 text-white" />

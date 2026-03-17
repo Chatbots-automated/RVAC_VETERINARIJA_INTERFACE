@@ -510,57 +510,65 @@ export function Reports() {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-100 font-medium">Gyvūnai</p>
-                <span className="text-3xl font-bold">{analytics.totalAnimals}</span>
-                <p className="text-xs text-blue-100 mt-1">Aktyvūs: {analytics.activeAnimals}</p>
+                <p className="text-sm text-gray-600 font-medium">Gyvūnai</p>
+                <span className="text-3xl font-bold text-gray-900">{analytics.totalAnimals}</span>
+                <p className="text-xs text-gray-500 mt-1">Aktyvūs: {analytics.activeAnimals}</p>
               </div>
-              <Users className="w-12 h-12 text-blue-200 opacity-80" />
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Users className="w-8 h-8 text-blue-600" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-100 font-medium">Gydymai</p>
-                <span className="text-3xl font-bold">{analytics.totalTreatments}</span>
-                <p className="text-xs text-blue-100 mt-1">Per 6 mėn.</p>
+                <p className="text-sm text-gray-600 font-medium">Gydymai</p>
+                <span className="text-3xl font-bold text-gray-900">{analytics.totalTreatments}</span>
+                <p className="text-xs text-gray-500 mt-1">Per 6 mėn.</p>
               </div>
-              <Syringe className="w-12 h-12 text-blue-200 opacity-80" />
+              <div className="p-3 bg-blue-50 rounded-lg">
+                <Syringe className="w-8 h-8 text-blue-600" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-amber-100 font-medium">Atsargų vertė</p>
-                <span className="text-3xl font-bold">€{analytics.totalProductValue.toLocaleString()}</span>
-                <p className="text-xs text-amber-100 mt-1">Bendrai</p>
+                <p className="text-sm text-gray-600 font-medium">Atsargų vertė</p>
+                <span className="text-3xl font-bold text-gray-900">€{analytics.totalProductValue.toLocaleString()}</span>
+                <p className="text-xs text-gray-500 mt-1">Bendrai</p>
               </div>
-              <Package className="w-12 h-12 text-amber-200 opacity-80" />
+              <div className="p-3 bg-amber-50 rounded-lg">
+                <Package className="w-8 h-8 text-amber-600" />
+              </div>
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-red-100 font-medium">Įspėjimai</p>
-                <span className="text-3xl font-bold">{analytics.lowStockProducts + analytics.expiringSoon}</span>
-                <p className="text-xs text-red-100 mt-1">Reikia dėmesio</p>
+                <p className="text-sm text-gray-600 font-medium">Įspėjimai</p>
+                <span className="text-3xl font-bold text-gray-900">{analytics.lowStockProducts + analytics.expiringSoon}</span>
+                <p className="text-xs text-gray-500 mt-1">Reikia dėmesio</p>
               </div>
-              <AlertTriangle className="w-12 h-12 text-red-200 opacity-80" />
+              <div className="p-3 bg-red-50 rounded-lg">
+                <AlertTriangle className="w-8 h-8 text-red-600" />
+              </div>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-cyan-50 border-b border-blue-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-bold text-gray-900">Dažniausios ligos</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Dažniausios ligos</h3>
               </div>
             </div>
             <div className="p-6">
@@ -584,11 +592,11 @@ export function Reports() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-bold text-gray-900">Populiariausi produktai</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Populiariausi produktai</h3>
               </div>
             </div>
             <div className="p-6">
@@ -614,11 +622,11 @@ export function Reports() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-green-50 border-b border-blue-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-5 h-5 text-blue-600" />
-                <h3 className="text-lg font-bold text-gray-900">Gydymai per mėnesį</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Gydymai per mėnesį</h3>
               </div>
             </div>
             <div className="p-6">
@@ -631,7 +639,7 @@ export function Reports() {
                       <span className="text-xs font-medium text-gray-600 w-20">{item.month}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-8 relative overflow-hidden">
                         <div
-                          className="bg-gradient-to-r from-blue-400 to-blue-500 h-8 rounded-full transition-all flex items-center justify-end pr-3"
+                          className="bg-blue-500 h-8 rounded-full transition-all flex items-center justify-end pr-3"
                           style={{ width: `${(item.count / Math.max(...analytics.treatmentsByMonth.map(t => t.count))) * 100}%` }}
                         >
                           <span className="text-xs font-bold text-white">{item.count}</span>
@@ -644,11 +652,11 @@ export function Reports() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-sky-50 to-blue-50 border-b border-sky-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
-                <Syringe className="w-5 h-5 text-sky-600" />
-                <h3 className="text-lg font-bold text-gray-900">Vakcinacijos per mėnesį</h3>
+                <Syringe className="w-5 h-5 text-cyan-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Vakcinacijos per mėnesį</h3>
               </div>
             </div>
             <div className="p-6">
@@ -661,7 +669,7 @@ export function Reports() {
                       <span className="text-xs font-medium text-gray-600 w-20">{item.month}</span>
                       <div className="flex-1 bg-gray-100 rounded-full h-8 relative overflow-hidden">
                         <div
-                          className="bg-gradient-to-r from-sky-400 to-sky-500 h-8 rounded-full transition-all flex items-center justify-end pr-3"
+                          className="bg-cyan-500 h-8 rounded-full transition-all flex items-center justify-end pr-3"
                           style={{ width: `${(item.count / Math.max(...analytics.vaccinationsByMonth.map(v => v.count))) * 100}%` }}
                         >
                           <span className="text-xs font-bold text-white">{item.count}</span>
@@ -676,11 +684,11 @@ export function Reports() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-indigo-50 to-cyan-50 border-b border-indigo-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <Activity className="w-5 h-5 text-indigo-600" />
-                <h3 className="text-lg font-bold text-gray-900">Gydymo rezultatai</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Gydymo rezultatai</h3>
               </div>
             </div>
             <div className="p-6">
@@ -689,7 +697,7 @@ export function Reports() {
               ) : (
                 <div className="space-y-3">
                   {analytics.outcomeStats.map((stat, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:shadow-md transition-all">
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <span className={`text-sm font-semibold capitalize ${
                         stat.outcome === 'recovered' ? 'text-green-600' :
                         stat.outcome === 'ongoing' ? 'text-amber-600' :
@@ -707,11 +715,11 @@ export function Reports() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-orange-600" />
-                <h3 className="text-lg font-bold text-gray-900">Atsargos pagal kategoriją</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Atsargos pagal kategoriją</h3>
               </div>
             </div>
             <div className="p-6">
@@ -720,7 +728,7 @@ export function Reports() {
               ) : (
                 <div className="space-y-3">
                   {analytics.inventoryByCategory.map((cat, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg hover:shadow-md transition-all">
+                    <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       <span className="text-sm font-semibold text-gray-700 capitalize">
                         {cat.category}
                       </span>
@@ -786,7 +794,7 @@ export function Reports() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg border border-gray-200 p-6">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <div className={`bg-${currentReport.color}-50 p-3 rounded-xl shadow-sm`}>
@@ -858,7 +866,7 @@ export function Reports() {
         </div>
 
         {reportType !== 'analytics' && (
-          <div className="bg-gradient-to-r from-gray-50 to-white border-2 border-gray-200 rounded-xl p-5 shadow-sm">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Filter className="w-5 h-5 text-gray-600" />

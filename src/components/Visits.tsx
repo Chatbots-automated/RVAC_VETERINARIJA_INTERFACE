@@ -417,7 +417,7 @@ export function Visits() {
       {(showAdd || editing) && <VisitForm />}
 
       <div className="bg-white rounded-xl shadow-sm border-2 border-amber-200 overflow-hidden">
-        <div className="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b-2 border-amber-200">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-amber-600" />
             <h3 className="text-lg font-bold text-gray-900">Planuojami vizitai</h3>
@@ -435,7 +435,7 @@ export function Visits() {
           ) : (
             <div className="space-y-3">
               {scheduledVisits.map((visit) => (
-                <div key={visit.id} className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200 hover:border-amber-300 transition-colors">
+                <div key={visit.id} className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:border-amber-300 transition-colors">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -484,7 +484,7 @@ export function Visits() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 border-b-2 border-slate-200">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <Check className="w-5 h-5 text-slate-600" />
             <h3 className="text-lg font-bold text-gray-900">Įvykę vizitai</h3>

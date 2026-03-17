@@ -687,8 +687,8 @@ export function Seklinimas() {
 
       {showNewProductForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-rose-50 to-pink-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 bg-gray-50">
               <h3 className="text-2xl font-semibold text-gray-900">Naujas produktas</h3>
               <p className="text-sm text-gray-600 mt-1">Pridėkite naują spermos ar pirštinių produktą</p>
             </div>
@@ -794,7 +794,7 @@ export function Seklinimas() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-rose-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:from-rose-700 hover:to-pink-700 font-medium transition-all shadow-lg shadow-rose-500/30"
+                  className="flex-1 bg-rose-600 text-white px-6 py-3 rounded-lg hover:bg-rose-700 font-medium transition-colors"
                 >
                   Sukurti produktą
                 </button>

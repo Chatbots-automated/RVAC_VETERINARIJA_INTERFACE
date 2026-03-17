@@ -374,7 +374,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
 
   return (
     <div className="fixed right-0 top-0 h-full w-full md:w-[500px] lg:w-[600px] xl:w-[800px] bg-white shadow-2xl z-50 flex flex-col">
-      <div className="flex items-center justify-between p-2 xl:p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-blue-100">
+      <div className="flex items-center justify-between p-2 xl:p-4 border-b border-gray-200 bg-gray-50">
         <div>
           <h2 className="text-base xl:text-xl font-bold text-gray-900">
             {animal.tag_no || 'Nenurodytas ID'}
@@ -447,7 +447,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
       <div ref={contentRef} className="flex-1 overflow-y-auto p-3 xl:p-6">
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-5 shadow-sm">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                   <FileText className="w-5 h-5 text-blue-600" />
@@ -534,7 +534,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
               <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
                 Statistika
@@ -844,7 +844,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
 
                   {/* Withdrawal dates - MOST IMPORTANT, SHOWN FIRST */}
                   {(treatment.withdrawal_until_milk || treatment.withdrawal_until_meat) && (
-                    <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-lg p-4 mb-4">
+                    <div className="bg-orange-50 border border-orange-300 rounded-lg p-4 mb-4">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
                           <AlertCircle className="w-5 h-5 text-orange-600" />
@@ -883,7 +883,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
                       </div>
                       <div className="space-y-2">
                         {treatment.usage_items.map((item: UsageItemWithProduct) => (
-                          <div key={item.id} className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
+                          <div key={item.id} className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="font-semibold text-gray-900 mb-1">
@@ -924,7 +924,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
                       </div>
                       <div className="space-y-2">
                         {treatment.treatment_courses.map((course: any) => (
-                          <div key={course.id} className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-3">
+                          <div key={course.id} className="bg-purple-50 border border-purple-200 rounded-lg p-3">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="font-semibold text-gray-900 mb-1">
@@ -1099,7 +1099,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
                   </div>
 
                   {vaccination.next_booster_date && (
-                    <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-3 mb-3">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Clock className="w-4 h-4 text-green-600" />
@@ -1150,7 +1150,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
 
         {activeTab === 'logs' && (
           <div className="space-y-4">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
               <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-blue-600" />
                 Gyvūno statistika
@@ -3486,7 +3486,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               </div>
 
               {/* SECTION 1: SINGLE-USE TREATMENT (TODAY ONLY) */}
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-300 rounded-lg p-4 space-y-3">
+              <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Pill className="w-5 h-5 text-blue-600" />
                   <h5 className="font-bold text-gray-900">Vienkartinis gydymas (tik šiandien)</h5>
@@ -3623,7 +3623,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               </div>
 
               {/* SECTION 2: COURSE PLANNING (MULTI-DAY) */}
-              <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-4 space-y-3">
+              <div className="bg-purple-50 border border-purple-300 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Calendar className="w-5 h-5 text-purple-600" />
                   <h5 className="font-bold text-gray-900">Kurso planavimas (kelių dienų gydymas)</h5>
@@ -3637,7 +3637,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                       setCourseSchedulerMedIndex(0);
                       setShowCourseScheduler(true);
                     }}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 flex items-center justify-center gap-2 font-semibold shadow-md"
+                    className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2 font-semibold transition-colors"
                   >
                     <Calendar className="w-5 h-5" />
                     Planuoti gydymo kursą
@@ -3760,7 +3760,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
 
           {/* SYNCHRONIZATION PROTOCOL */}
           {formData.procedures.includes('Sinchronizacijos protokolas') && (
-            <div className="mt-4 p-4 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg">
+            <div className="mt-4 p-4 bg-purple-50 border border-purple-300 rounded-lg">
               <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-purple-600" />
                 Sinchronizacijos protokolas
@@ -4770,7 +4770,7 @@ function VisitDetailModal({ visit, animalId, onClose, onSuccess }: { visit: Anim
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-white border-b border-blue-800">
+        <div className="sticky top-0 bg-blue-600 p-6 text-white border-b border-blue-700">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold">Vizito informacija</h2>
             <button
@@ -5211,7 +5211,7 @@ function SyncStepMedicationDisplay({ visitId, syncStepId, onBatchSelected }: { v
   }
 
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-pink-50 border-2 border-purple-300 rounded-lg p-5 shadow-sm">
+    <div className="bg-purple-50 border border-purple-300 rounded-lg p-5">
       <div className="flex items-center gap-2 mb-4">
         <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
           <Syringe className="w-5 h-5 text-purple-600" />

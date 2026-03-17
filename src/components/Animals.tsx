@@ -314,7 +314,7 @@ export function Animals() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+              <div className="bg-blue-600 rounded-lg shadow-sm p-6 text-white border border-blue-700">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="bg-white/20 p-3 rounded-lg">
                     <Stethoscope className="w-8 h-8" />
@@ -324,7 +324,7 @@ export function Animals() {
                     <p className="text-2xl font-bold">{selectedAnimal.tag_no || 'N/A'}</p>
                   </div>
                 </div>
-                <div className="space-y-3 pt-4 border-t border-blue-400">
+                <div className="space-y-3 pt-4 border-t border-blue-500">
                   {(selectedAnimal as any).neck_no && (
                     <div className="flex items-center justify-between">
                       <span className="text-blue-100">Kaklo Nr.:</span>
@@ -411,7 +411,7 @@ export function Animals() {
 
             <div className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b-2 border-amber-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-amber-600" />
                     <h3 className="text-lg font-bold text-gray-900">Planuojamas vizitas</h3>
@@ -437,7 +437,7 @@ export function Animals() {
                     }
 
                     return (
-                      <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg border-2 border-amber-200">
+                      <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
@@ -477,7 +477,7 @@ export function Animals() {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-slate-50 to-gray-50 border-b-2 border-slate-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-slate-600" />
                     <h3 className="text-lg font-bold text-gray-900">Vizitų istorija</h3>
@@ -555,7 +555,7 @@ export function Animals() {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-green-50 to-blue-50 border-b-2 border-green-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <Syringe className="w-5 h-5 text-green-600" />
                     <h3 className="text-lg font-bold text-gray-900">Vakcinacijų istorija</h3>
@@ -618,7 +618,7 @@ export function Animals() {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <Activity className="w-5 h-5 text-blue-600" />
                     <h3 className="text-lg font-bold text-gray-900">Gydymų istorija</h3>
@@ -732,7 +732,7 @@ export function Animals() {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b-2 border-purple-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <FileText className="w-5 h-5 text-purple-600" />
                     <h3 className="text-lg font-bold text-gray-900">Gydymo kursai</h3>
@@ -799,7 +799,7 @@ export function Animals() {
               </div>
 
               <div className="bg-white rounded-xl shadow-sm border-2 border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-pink-50 to-purple-50 border-b-2 border-pink-200">
+                <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-5 h-5 text-pink-600" />
                     <h3 className="text-lg font-bold text-gray-900">Sinchronizacijos protokolai</h3>
@@ -817,7 +817,7 @@ export function Animals() {
                   ) : (
                     <div className="space-y-4">
                       {selectedAnimal.synchronizations.map((sync: any) => (
-                        <div key={sync.id} className="p-4 bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg border-2 border-pink-200 hover:border-pink-300 transition-colors">
+                        <div key={sync.id} className="p-4 bg-pink-50 rounded-lg border border-pink-200 hover:border-pink-300 transition-colors">
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex-1">
                               <h4 className="font-semibold text-gray-900">

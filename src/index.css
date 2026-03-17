@@ -33,39 +33,39 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 hover:border-blue-300 hover:-translate-y-0.5;
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200;
   }
 
   .card-header {
-    @apply px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50;
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
   }
 
   .btn-primary {
-    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold shadow-md hover:shadow-lg hover:from-blue-700 hover:to-indigo-700 active:scale-98 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none touch-manipulation;
+    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation;
   }
 
   .btn-secondary {
-    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 active:scale-98 transition-all duration-200 touch-manipulation border border-gray-300 hover:border-gray-400;
+    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors duration-200 touch-manipulation border border-gray-300;
   }
 
   .btn-success {
-    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-semibold shadow-sm hover:shadow-md hover:from-green-700 hover:to-green-800 active:scale-95 transition-all duration-150 touch-manipulation;
+    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors duration-200 touch-manipulation;
   }
 
   .btn-danger {
-    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg font-semibold shadow-sm hover:shadow-md hover:from-red-700 hover:to-red-800 active:scale-95 transition-all duration-150 touch-manipulation;
+    @apply px-6 py-2.5 md:py-3 min-h-[44px] bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors duration-200 touch-manipulation;
   }
 
   .input {
-    @apply w-full px-4 py-2.5 md:py-3 min-h-[44px] md:min-h-[48px] border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 placeholder:text-gray-400 text-base;
+    @apply w-full px-4 py-2.5 md:py-3 min-h-[44px] md:min-h-[48px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-150 placeholder:text-gray-400 text-base;
   }
 
   .select {
-    @apply w-full px-4 py-2.5 md:py-3 min-h-[44px] md:min-h-[48px] border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-150 bg-white text-base;
+    @apply w-full px-4 py-2.5 md:py-3 min-h-[44px] md:min-h-[48px] border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-150 bg-white text-base;
   }
 
   .badge {
-    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium;
   }
 
   .badge-success {
@@ -85,7 +85,7 @@
   }
 
   .stat-card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 hover:-translate-y-1 hover:border-blue-300;
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200;
   }
 }
 
@@ -117,142 +117,12 @@
     animation: fadeIn 0.3s ease-in-out;
   }
 
-  .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
-  }
-
-  .animate-slide-down {
-    animation: slideDown 0.3s ease-out;
-  }
-
-  .animate-scale-in {
-    animation: scaleIn 0.2s ease-out;
-  }
-
-  .animate-pulse-slow {
-    animation: pulseSlow 3s ease-in-out infinite;
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-glow {
-    animation: glow 2s ease-in-out infinite;
-  }
-
   @keyframes fadeIn {
     from {
       opacity: 0;
     }
     to {
       opacity: 1;
-    }
-  }
-
-  @keyframes slideUp {
-    from {
-      transform: translateY(10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes slideDown {
-    from {
-      transform: translateY(-10px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @keyframes scaleIn {
-    from {
-      transform: scale(0.95);
-      opacity: 0;
-    }
-    to {
-      transform: scale(1);
-      opacity: 1;
-    }
-  }
-
-  @keyframes pulseSlow {
-    0%, 100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.7;
-    }
-  }
-
-  @keyframes float {
-    0%, 100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-10px);
-    }
-  }
-
-  @keyframes glow {
-    0%, 100% {
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
-    }
-    50% {
-      box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
-    }
-  }
-
-  .glass {
-    background: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-  }
-
-  .glass-dark {
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  .gradient-border {
-    position: relative;
-    background: white;
-    border-radius: 0.75rem;
-  }
-
-  .gradient-border::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    border-radius: 0.75rem;
-    padding: 2px;
-    background: linear-gradient(135deg, #3b82f6, #8b5cf6, #ec4899);
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-  }
-
-  .shimmer {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-  }
-
-  @keyframes shimmer {
-    0% {
-      background-position: -200% 0;
-    }
-    100% {
-      background-position: 200% 0;
     }
   }
 

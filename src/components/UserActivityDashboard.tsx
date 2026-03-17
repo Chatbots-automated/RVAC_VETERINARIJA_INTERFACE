@@ -189,43 +189,51 @@ export function UserActivityDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-red-100 text-sm font-medium">Viso veiksmų</p>
-              <p className="text-3xl font-bold mt-2">{stats.totalActions.toLocaleString()}</p>
+              <p className="text-gray-600 text-sm font-medium">Viso veiksmų</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalActions.toLocaleString()}</p>
             </div>
-            <Activity className="h-12 w-12 text-red-200" />
+            <div className="p-3 bg-red-50 rounded-lg">
+              <Activity className="h-8 w-8 text-red-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Aktyvūs vartotojai</p>
-              <p className="text-3xl font-bold mt-2">{stats.uniqueUsers}</p>
+              <p className="text-gray-600 text-sm font-medium">Aktyvūs vartotojai</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.uniqueUsers}</p>
             </div>
-            <Users className="h-12 w-12 text-blue-200" />
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <Users className="h-8 w-8 text-blue-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Šiandien</p>
-              <p className="text-3xl font-bold mt-2">{stats.todayActions.toLocaleString()}</p>
+              <p className="text-gray-600 text-sm font-medium">Šiandien</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.todayActions.toLocaleString()}</p>
             </div>
-            <TrendingUp className="h-12 w-12 text-green-200" />
+            <div className="p-3 bg-green-50 rounded-lg">
+              <TrendingUp className="h-8 w-8 text-green-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white">
+        <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200 hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-medium">Šią savaitę</p>
-              <p className="text-3xl font-bold mt-2">{stats.weekActions.toLocaleString()}</p>
+              <p className="text-gray-600 text-sm font-medium">Šią savaitę</p>
+              <p className="text-3xl font-bold text-gray-900 mt-2">{stats.weekActions.toLocaleString()}</p>
             </div>
-            <Clock className="h-12 w-12 text-orange-200" />
+            <div className="p-3 bg-orange-50 rounded-lg">
+              <Clock className="h-8 w-8 text-orange-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -277,7 +285,7 @@ export function UserActivityDashboard() {
           {stats.hourlyActivity.map(({ hour, count }) => (
             <div key={hour} className="flex-1 flex flex-col items-center gap-2">
               <div
-                className="w-full bg-gradient-to-t from-red-500 to-red-400 rounded-t transition-all hover:from-red-600 hover:to-red-500"
+                className="w-full bg-blue-500 rounded-t transition-all hover:bg-blue-600"
                 style={{
                   height: maxHourlyCount > 0 ? `${(count / maxHourlyCount) * 100}%` : '0%',
                   minHeight: count > 0 ? '4px' : '0px'
@@ -311,7 +319,7 @@ export function UserActivityDashboard() {
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-gradient-to-r from-red-500 to-red-400 h-2 rounded-full transition-all"
+                    className="bg-blue-500 h-2 rounded-full transition-all"
                     style={{ width: `${(item.count / stats.totalActions) * 100}%` }}
                   />
                 </div>
