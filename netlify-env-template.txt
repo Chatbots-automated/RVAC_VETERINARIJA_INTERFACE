@@ -1,0 +1,18 @@
+# Netlify Environment Variables Template
+# Copy these to Netlify Dashboard: Site Settings → Environment Variables
+
+# Supabase Configuration
+VITE_SUPABASE_URL=https://oxzfztimfabzzqjmsihl.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94emZ6dGltZmFienpxam1zaWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMzc0MTIsImV4cCI6MjA4ODgxMzQxMn0._fJnKP48APEekQ80E_QcUhYapZM9C3vsEaoqVax9OC8
+VITE_SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94emZ6dGltZmFienpxam1zaWhsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MzIzNzQxMiwiZXhwIjoyMDg4ODEzNDEyfQ.DCTDHl-aPpEajGndU69nvp-ZHeYv5sIVR1gU_XW_Edk
+
+# Instructions:
+# 1. Go to Netlify Dashboard
+# 2. Select your site
+# 3. Go to Site settings → Environment variables
+# 4. Click "Add a variable" for each variable above
+# 5. Copy the key name (e.g., VITE_SUPABASE_URL)
+# 6. Copy the value
+# 7. Click "Create variable"
+# 8. Repeat for all variables
+# 9. Trigger a new deploy after adding all variables

@@ -1,33 +1,31 @@
-# Netlify configuration for OKSANA Farm Management System
-
 [build]
-  # Build command
   command = "npm run build"
-  
-  # Directory with the built files
   publish = "dist"
 
-# Environment variables (including Node version and Supabase config)
 [build.environment]
   NODE_VERSION = "18"
-  VITE_SUPABASE_URL = "https://olxnahsxvyiadknybagt.supabase.co"
-  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9seG5haHN4dnlpYWRrbnliYWd0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3NzE3ODYsImV4cCI6MjA2ODM0Nzc4Nn0.VWlE-VheDuyTNvvA59sjlNWOtWh4jN-phWoTCSR7VVU"
+  NPM_VERSION = "9"
 
-# Redirect rules for SPA (Single Page Application)
+# Environment variables (these should be set in Netlify UI for security)
+# VITE_SUPABASE_URL = "https://oxzfztimfabzzqjmsihl.supabase.co"
+# VITE_SUPABASE_ANON_KEY = "your-anon-key"
+# VITE_SUPABASE_SERVICE_ROLE_KEY = "your-service-role-key"
+
+# Redirect rules for SPA
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
 
 # Headers for security
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
 # Cache static assets
 [[headers]]
@@ -35,25 +33,14 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Build plugins (optional - uncomment if needed)
-# [[plugins]]
-#   package = "@netlify/plugin-lighthouse"
+# Cache fonts
+[[headers]]
+  for = "/*.woff2"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
-# Deploy contexts
-[context.production]
-  # Production-specific settings
-  command = "npm run build"
-
-[context.deploy-preview]
-  # Preview deployments
-  command = "npm run build"
-
-[context.branch-deploy]
-  # Branch deployments
-  command = "npm run build"
-
-# Development context (local netlify dev)
-[context.dev]
-  command = "npm run dev"
-  targetPort = 5173
-  autoLaunch = false
+# Don't cache index.html
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
