@@ -28,12 +28,6 @@ interface VeterinaryModuleProps {
 
 export function VeterinaryModule({ onBackToModules }: VeterinaryModuleProps) {
   const [currentView, setCurrentView] = useState('dashboard');
-  const [farmSelected, setFarmSelected] = useState(false);
-  const { selectedFarm } = useFarm();
-
-  if (!farmSelected || !selectedFarm) {
-    return <FarmSelector onFarmSelected={() => setFarmSelected(true)} onBack={onBackToModules} />;
-  }
 
   const renderView = () => {
     switch (currentView) {

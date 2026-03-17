@@ -42,6 +42,16 @@ export function Treatment() {
     withdrawal_until: '',
   });
 
+  // Auto-update vet_name when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        vet_name: user.full_name || user.email || ''
+      }));
+    }
+  }, [user]);
+
   const [usageItems, setUsageItems] = useState<UsageLine[]>([
     { id: '1', product_id: '', batch_id: '', qty: '', unit: 'ml', purpose: 'treatment' }
   ]);

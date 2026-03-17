@@ -15,7 +15,7 @@ interface VaccinationGroup {
 }
 
 export function Vaccinations() {
-  const { logAction } = useAuth();
+  const { user, logAction } = useAuth();
   const { selectedFarm } = useFarm();
   const [vaccinations, setVaccinations] = useState<any[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -43,14 +43,24 @@ export function Vaccinations() {
     dose_amount: '',
     unit: 'ml' as Unit,
   }]);
-
+  
   const [massVaccinationData, setMassVaccinationData] = useState({
     vaccination_date: new Date().toISOString().split('T')[0],
     next_booster_date: '',
     dose_number: '1',
-    administered_by: '',
+    administered_by: user?.full_name || user?.email || '',
     notes: '',
   });
+
+  // Auto-update administered_by when user changes
+  useEffect(() => {
+    if (user) {
+      setMassVaccinationData(prev => ({
+        ...prev,
+        administered_by: user.full_name || user.email || ''
+      }));
+    }
+  }, [user]);
 
   useEffect(() => {
     loadData();

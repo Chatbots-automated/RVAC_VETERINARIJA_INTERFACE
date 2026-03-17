@@ -17,10 +17,10 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-800 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl">
         <div className="text-center mb-12">
-          <div className="inline-block mb-6 bg-white rounded-lg p-4">
+          <div className="inline-block mb-6">
             <img 
               src="https://rvac.lt/s/img/wp-content/uploads/RVAC_logo.png" 
               alt="RVAC Logo" 
@@ -30,10 +30,10 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
           <h1 className="text-4xl lg:text-5xl font-bold text-white mb-3">
             RVAC Veterinarija
           </h1>
-          <p className="text-gray-300 text-base mb-2">
+          <p className="text-blue-200 text-base mb-2">
             Respublikinis veterinarijos aprūpinimo centras
           </p>
-          <p className="text-gray-400 text-sm mt-4">
+          <p className="text-blue-300 text-sm mt-4">
             Pasirinkite modulį
           </p>
         </div>
@@ -41,11 +41,11 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mx-auto max-w-6xl">
           <button
             onClick={() => onSelectModule('veterinarija')}
-            className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200 text-left"
+            className="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-200 text-left"
           >
             <div className="bg-blue-600 p-6 text-center">
-              <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center mb-4">
-                <Stethoscope className="w-12 h-12 text-blue-600" />
+              <div className="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center mb-3">
+                <Stethoscope className="w-10 h-10 text-blue-600" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-1">
                 Veterinarija
@@ -95,7 +95,7 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-center gap-2 text-blue-600 font-medium">
                   <span>Atidaryti</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -105,11 +105,11 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
 
           <button
             onClick={() => onSelectModule('islaidos')}
-            className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200 text-left"
+            className="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-200 text-left"
           >
-            <div className="bg-amber-600 p-6 text-center">
-              <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center mb-4">
-                <Euro className="w-12 h-12 text-amber-600" />
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-center">
+              <div className="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center mb-3">
+                <Euro className="w-10 h-10 text-amber-600" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-1">
                 Išlaidos
@@ -153,7 +153,7 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-center gap-2 text-amber-600 font-medium">
                   <span>Atidaryti</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -163,11 +163,11 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
 
           <button
             onClick={() => onSelectModule('klientai')}
-            className="group bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border border-gray-200 text-left"
+            className="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-200 text-left"
           >
             <div className="bg-indigo-600 p-6 text-center">
-              <div className="w-20 h-20 mx-auto bg-white rounded-lg flex items-center justify-center mb-4">
-                <Building2 className="w-12 h-12 text-indigo-600" />
+              <div className="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center mb-3">
+                <Building2 className="w-10 h-10 text-indigo-600" />
               </div>
               <h2 className="text-2xl font-bold text-white mb-1">
                 Klientai
@@ -211,7 +211,7 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium">
                   <span>Atidaryti</span>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -222,13 +222,13 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
 
         <div className="mt-12 text-center">
           <div className="inline-flex items-center gap-4 bg-white rounded-lg px-6 py-3 border border-gray-200 shadow-sm">
-            <div className="text-gray-900">
-              <p className="text-sm text-gray-600">Prisijungęs kaip</p>
+            <div className="text-gray-700">
+              <p className="text-sm text-gray-500">Prisijungęs kaip</p>
               <p className="font-medium">{user?.email}</p>
             </div>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
             >
               <LogOut className="w-5 h-5" />
               <span>Atsijungti</span>

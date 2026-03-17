@@ -24,12 +24,22 @@ export function AuthForm() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
           <div className="bg-blue-600 px-8 py-10 text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="w-20 h-20 rounded-lg bg-white p-4 flex items-center justify-center">
+              <img 
+                src="https://rvac.lt/s/img/wp-content/uploads/RVAC_logo.png" 
+                alt="RVAC Logo" 
+                className="h-20 w-auto"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling;
+                  if (fallback) (fallback as HTMLElement).style.display = 'flex';
+                }}
+              />
+              <div className="hidden w-20 h-20 rounded-lg bg-white p-4 items-center justify-center">
                 <Stethoscope className="w-12 h-12 text-blue-600" />
               </div>
             </div>
@@ -123,7 +133,7 @@ export function AuthForm() {
           </div>
 
           <div className="bg-gray-50 px-8 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-700">
+            <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
               <Stethoscope className="w-4 h-4" />
               <span>Saugus veterinarijos atsargų valdymas</span>
             </div>
@@ -131,7 +141,7 @@ export function AuthForm() {
         </div>
 
         <div className="mt-6 text-center text-sm text-gray-600">
-          <p>© 2025 RVAC · Veterinarijos Valdymo Sistema v1.0.0</p>
+          <p>© 2026 RVAC · Veterinarijos Valdymo Sistema v1.0.0</p>
         </div>
       </div>
     </div>

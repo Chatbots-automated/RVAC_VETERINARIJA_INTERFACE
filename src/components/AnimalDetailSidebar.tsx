@@ -1684,6 +1684,16 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     next_visit_date: visitToEdit?.next_visit_date?.slice(0, 16) || '',
     treatment_required: visitToEdit?.treatment_required || false,
   });
+
+  // Auto-update vet_name when user changes
+  useEffect(() => {
+    if (user && !visitToEdit) {
+      setFormData(prev => ({
+        ...prev,
+        vet_name: user.full_name || user.email || ''
+      }));
+    }
+  }, [user, visitToEdit]);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [diseases, setDiseases] = useState<any[]>([]);
@@ -3374,13 +3384,15 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <SearchableSelect
-                label="Gydytojas"
-                options={users.map(user => ({ value: user.full_name, label: user.full_name }))}
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gydytojas
+              </label>
+              <input
+                type="text"
                 value={formData.vet_name}
-                onChange={(value) => setFormData({ ...formData, vet_name: value })}
-                placeholder="Pasirinkite gydytoją..."
-                emptyLabel="Nepasirinkta"
+                onChange={(e) => setFormData({ ...formData, vet_name: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Gydytojo vardas"
               />
             </div>
             <div>

@@ -60,6 +60,16 @@ export function BulkTreatment() {
     notes: '',
   });
 
+  // Auto-update vet_name when user changes
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        vet_name: user.full_name || user.email || ''
+      }));
+    }
+  }, [user]);
+
   useEffect(() => {
     loadData();
   }, [selectedFarm]);
