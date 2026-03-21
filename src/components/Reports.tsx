@@ -26,7 +26,8 @@ import {
   MedicalWasteReport,
   DrugJournalReport,
   BiocideJournalReport,
-  InseminationJournalReport
+  InseminationJournalReport,
+  WithdrawalReport
 } from './ReportTemplates';
 import { SearchableSelect } from './SearchableSelect';
 import { InvoiceViewer } from './InvoiceViewer';
@@ -49,7 +50,7 @@ interface AnalyticsData {
   inventoryByCategory: Array<{ category: string; value: number }>;
 }
 
-type ReportType = 'analytics' | 'drug_journal' | 'treated_animals' | 'biocide_journal' | 'insemination_journal' | 'medical_waste' | 'invoices';
+type ReportType = 'analytics' | 'drug_journal' | 'treated_animals' | 'biocide_journal' | 'insemination_journal' | 'medical_waste' | 'invoices' | 'withdrawal';
 
 // Get current month's first and last day
 const getCurrentMonthDates = () => {
@@ -438,6 +439,21 @@ export function Reports() {
           break;
         }
 
+        case 'withdrawal': {
+          if (!selectedFarm) return;
+          
+          let query = supabase.from('vw_withdrawal_report').select('*').eq('farm_id', selectedFarm.id);
+          if (dateFrom) query = query.gte('treatment_date', dateFrom);
+          if (dateTo) query = query.lte('treatment_date', dateTo);
+          if (filterAnimal) query = query.eq('animal_id', filterAnimal);
+
+          const { data, error } = await query;
+          if (error) throw error;
+
+          result = data || [];
+          break;
+        }
+
         default:
           return;
       }
@@ -770,6 +786,8 @@ export function Reports() {
         return <MedicalWasteReport data={data} />;
       case 'drug_journal':
         return <DrugJournalReport data={data} />;
+      case 'withdrawal':
+        return <WithdrawalReport data={data} />;
       case 'biocide_journal':
         return <BiocideJournalReport data={data} />;
       case 'insemination_journal':
@@ -784,6 +802,7 @@ export function Reports() {
     invoices: { name: 'Sąskaitų Priskirimas', icon: FileText, color: 'indigo' },
     drug_journal: { name: 'Veterinarinių vaistų žurnalas', icon: Syringe, color: 'emerald' },
     treated_animals: { name: 'Gydomų gyvūnų registras', icon: Activity, color: 'teal' },
+    withdrawal: { name: 'Išlaukų ataskaita', icon: AlertTriangle, color: 'red' },
     biocide_journal: { name: 'Biocidų žurnalas', icon: Package, color: 'purple' },
     insemination_journal: { name: 'Sėklinimo žurnalas', icon: Heart, color: 'rose' },
     medical_waste: { name: 'Medicininių atliekų žurnalas', icon: AlertTriangle, color: 'orange' },

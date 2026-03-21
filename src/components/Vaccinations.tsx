@@ -195,6 +195,7 @@ export function Vaccinations() {
           unit: vaccine.unit,
           administered_by: massVaccinationData.administered_by || null,
           notes: massVaccinationData.notes || null,
+          created_by_user_id: user?.full_name || user?.email || null,
         }));
 
         allVaccinationEntries.push(...vaccinationEntries);

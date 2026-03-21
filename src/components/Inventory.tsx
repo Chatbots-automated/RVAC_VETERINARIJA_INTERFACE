@@ -20,6 +20,7 @@ interface StockItem {
   package_size?: number | null;
   package_count?: number | null;
   primary_pack_size?: number | null;
+  allocation_id?: string | null;
 }
 
 interface EditingData {
@@ -92,6 +93,7 @@ export function Inventory() {
           qty_left,
           package_size,
           package_count,
+          allocation_id,
           products!inner(
             name,
             category,
@@ -117,6 +119,7 @@ export function Inventory() {
         primary_pack_size: batch.products?.primary_pack_size,
         package_size: batch.package_size,
         package_count: batch.package_count,
+        allocation_id: batch.allocation_id,
       })) || [];
 
       // Filter out expired batches
@@ -469,7 +472,15 @@ export function Inventory() {
                           className="w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500"
                         />
                       ) : (
-                        <div className="font-medium text-gray-900">{item.product_name}</div>
+                        <div>
+                          <div className="font-medium text-gray-900">{item.product_name}</div>
+                          {item.allocation_id && (
+                            <div className="text-xs text-purple-600 mt-1 flex items-center gap-1">
+                              <Package className="w-3 h-3" />
+                              Paskirstyta iš sandėlio
+                            </div>
+                          )}
+                        </div>
                       )}
                     </td>
                     <td className="px-6 py-4">

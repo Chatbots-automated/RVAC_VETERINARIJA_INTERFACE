@@ -1,8 +1,8 @@
-import { Stethoscope, Euro, Package, Shield, LogOut, Building2 } from 'lucide-react';
+import { Stethoscope, Euro, Package, Shield, LogOut, Building2, Warehouse } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface ModuleSelectorProps {
-  onSelectModule: (module: 'veterinarija' | 'islaidos' | 'klientai') => void;
+  onSelectModule: (module: 'veterinarija' | 'islaidos' | 'klientai' | 'vetpraktika') => void;
 }
 
 export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
@@ -38,7 +38,7 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mx-auto max-w-7xl">
           <button
             onClick={() => onSelectModule('veterinarija')}
             className="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-200 text-left"
@@ -210,6 +210,72 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
 
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="flex items-center justify-center gap-2 text-indigo-600 font-medium">
+                  <span>Atidaryti</span>
+                  <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onSelectModule('vetpraktika')}
+            className="group bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden border border-gray-200 text-left"
+          >
+            <div className="bg-gradient-to-r from-slate-700 to-gray-800 p-6 text-center">
+              <div className="w-16 h-16 mx-auto bg-white rounded-lg flex items-center justify-center mb-3">
+                <Warehouse className="w-10 h-10 text-slate-700" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-1">
+                Vetpraktika UAB
+              </h2>
+              <p className="text-sm text-gray-300">
+                Bendras sandėlis
+              </p>
+            </div>
+
+            <div className="p-6">
+              <div className="space-y-3 mb-6">
+                <div className="flex items-start gap-3">
+                  <Package className="w-5 h-5 text-slate-700 flex-shrink-0 mt-0.5" />
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Sandėlio atsargos</p>
+                    <p className="text-sm text-gray-600">Bendras vaistų sandėlis</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <Warehouse className="w-5 h-5 text-slate-700 flex-shrink-0 mt-0.5" />
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Pajamavimas</p>
+                    <p className="text-sm text-gray-600">Produktų priėmimas į sandėlį</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-slate-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Paskirstymas</p>
+                    <p className="text-sm text-gray-600">Atsargų paskirstymas ūkiams</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-slate-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <div className="text-left">
+                    <p className="font-medium text-gray-900">Bendros ataskaitos</p>
+                    <p className="text-sm text-gray-600">Visų ūkių suvestinės</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-center gap-2 text-slate-700 font-medium">
                   <span>Atidaryti</span>
                   <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

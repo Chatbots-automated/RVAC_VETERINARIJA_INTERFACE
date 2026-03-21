@@ -39,7 +39,6 @@ interface LayoutProps {
 const menuItems = [
   { id: 'dashboard', label: 'Pagrindinis', icon: LayoutDashboard, permission: 'view' },
   { id: 'inventory', label: 'Atsargos', icon: Package, permission: 'view' },
-  { id: 'receive', label: 'Priėmimas', icon: FileText, permission: 'receive_stock' },
   { id: 'animals', label: 'Gyvūnai', icon: Stethoscope, permission: 'animals' },
   { id: 'visits', label: 'Vizitai', icon: Calendar, permission: 'animals' },
   { id: 'synchronizations', label: 'Sinchronizacijos', icon: Repeat, permission: 'animals' },

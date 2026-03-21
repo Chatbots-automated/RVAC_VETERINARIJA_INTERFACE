@@ -8,9 +8,10 @@ import { RealtimeProvider } from './contexts/RealtimeContext';
 import { FarmProvider } from './contexts/FarmContext';
 import { Farms } from './components/Farms';
 import { VeterinaryModule } from './components/VeterinaryModule';
+import { VetpraktikaModule } from './components/VetpraktikaModule';
 import { Euro, Building2 } from 'lucide-react';
 
-type Module = 'veterinarija' | 'islaidos' | 'klientai' | null;
+type Module = 'veterinarija' | 'islaidos' | 'klientai' | 'vetpraktika' | null;
 
 interface Notification {
   id: string;
@@ -170,6 +171,20 @@ function App() {
               </div>
             </div>
           </div>
+        </FarmProvider>
+      </RealtimeProvider>
+    );
+  }
+
+  if (selectedModule === 'vetpraktika') {
+    return (
+      <RealtimeProvider>
+        <FarmProvider>
+          <VetpraktikaModule onBackToModules={() => setSelectedModule(null)} />
+          <NotificationToast
+            notification={notification}
+            onDismiss={() => setNotification(null)}
+          />
         </FarmProvider>
       </RealtimeProvider>
     );

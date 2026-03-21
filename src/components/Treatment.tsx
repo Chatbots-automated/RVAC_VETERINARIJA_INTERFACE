@@ -255,7 +255,7 @@ export function Treatment() {
           services: formData.services || null,
           outcome: formData.outcome || null,
           vet_name: formData.vet_name || null,
-          created_by_user_id: user?.id || null,
+          created_by_user_id: user?.full_name || user?.email || null,
           notes: formData.notes || null,
           withdrawal_until: formData.withdrawal_until || null,
         })

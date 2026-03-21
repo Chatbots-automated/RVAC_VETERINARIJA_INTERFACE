@@ -783,3 +783,104 @@ export function InseminationJournalReport({ data }: InseminationJournalReportPro
     </div>
   );
 }
+
+interface WithdrawalReportProps {
+  data: any[];
+}
+
+export function WithdrawalReport({ data }: WithdrawalReportProps) {
+  return (
+    <div className="bg-white">
+      <div className="text-center mb-6 no-print">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">IŠLAUKŲ ATASKAITA</h1>
+        <p className="text-sm text-gray-500">Gyvūnai su aktyvia karencija</p>
+        <p className="text-sm text-gray-500">Sugeneruota: {formatDateLT(new Date().toISOString())}</p>
+      </div>
+
+      {data.length === 0 && (
+        <div className="text-center py-16">
+          <p className="text-lg text-gray-500">Nėra gyvūnų su aktyvia karencija</p>
+        </div>
+      )}
+
+      {data.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border-2 border-gray-300 shadow-sm">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gradient-to-r from-red-50 to-orange-50">
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Gyvūno žymė</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Rūšis</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Gydymo data</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Liga</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Panaudoti vaistai</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Karencija (mėsa)</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Karencija (pienas)</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Veterinaras</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((row, idx) => (
+                <tr key={idx} className="hover:bg-red-50 transition-colors print-break-avoid">
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center">
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-100 text-blue-700">
+                      {row.animal_tag || '-'}
+                    </span>
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">
+                    {row.species || '-'}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center text-gray-900">
+                    {row.treatment_date ? formatDateLT(row.treatment_date) : '-'}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-900">
+                    {row.disease_name || '-'}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">
+                    {row.medicines_used || '-'}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center">
+                    {row.withdrawal_until_meat ? (
+                      <div className="space-y-1">
+                        <div className={`font-bold ${row.withdrawal_days_meat > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                          {row.withdrawal_days_meat > 0 ? `${row.withdrawal_days_meat} d.` : 'Pasibaigė'}
+                        </div>
+                        <div className="text-[10px] text-gray-600">
+                          iki {formatDateLT(row.withdrawal_until_meat)}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center">
+                    {row.withdrawal_until_milk ? (
+                      <div className="space-y-1">
+                        <div className={`font-bold ${row.withdrawal_days_milk > 0 ? 'text-red-700' : 'text-green-700'}`}>
+                          {row.withdrawal_days_milk > 0 ? `${row.withdrawal_days_milk} d.` : 'Pasibaigė'}
+                        </div>
+                        <div className="text-[10px] text-gray-600">
+                          iki {formatDateLT(row.withdrawal_until_milk)}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">
+                    {row.veterinarian || '-'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {data.length > 0 && (
+        <div className="mt-4 text-sm text-gray-600 no-print">
+          <p>Viso gyvūnų su karencija: <span className="font-semibold text-gray-900">{data.length}</span></p>
+        </div>
+      )}
+    </div>
+  );
+}

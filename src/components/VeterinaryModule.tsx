@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Layout } from './Layout';
 import { Dashboard } from './Dashboard';
 import { Inventory } from './Inventory';
-import { ReceiveStock } from './ReceiveStock';
 import { Products } from './Products';
 import { AnimalsCompact as Animals } from './AnimalsCompact';
 import { VisitsModern as Visits } from './VisitsModern';
@@ -35,8 +34,6 @@ export function VeterinaryModule({ onBackToModules }: VeterinaryModuleProps) {
         return <Dashboard />;
       case 'inventory':
         return <Inventory />;
-      case 'receive':
-        return <ReceiveStock />;
       case 'treatment-history':
         return <TreatmentHistory />;
       case 'treatment-costs':
