@@ -84,16 +84,22 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         console.error('Error loading batches:', batchError);
       }
 
-      // Get invoice items with discount info for all warehouse batches
-      const invoiceIds = [...new Set(allocationsData?.map(a => (a.warehouse_batches as any)?.invoice_id).filter(Boolean))];
+      // Get invoice items with discount info using warehouse_batch_id
+      const warehouseBatchIds = [...new Set(allocationsData?.map(a => a.warehouse_batch_id).filter(Boolean))];
       let invoiceItemsData: any[] = [];
       
-      if (invoiceIds.length > 0) {
-        const { data } = await supabase
+      if (warehouseBatchIds.length > 0) {
+        const { data, error: itemsError } = await supabase
           .from('invoice_items')
-          .select('invoice_id, product_id, discount_percent, unit_price, quantity, total_price')
-          .in('invoice_id', invoiceIds);
+          .select('warehouse_batch_id, product_id, discount_percent, unit_price, quantity, total_price')
+          .in('warehouse_batch_id', warehouseBatchIds);
+        
+        if (itemsError) {
+          console.error('Error loading invoice items:', itemsError);
+        }
+        
         invoiceItemsData = data || [];
+        console.log('📋 Invoice items loaded:', invoiceItemsData.length, invoiceItemsData);
       }
 
       if (allocationsData) {
@@ -111,10 +117,17 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           const warehouseReceivedQty = parseFloat(warehouseBatch.received_qty) || 1;
           const unitPrice = purchasePrice / warehouseReceivedQty;
 
-          // Find invoice item to get discount info
+          // Find invoice item to get discount info using warehouse_batch_id
           const invoiceItem = invoiceItemsData?.find(
-            ii => ii.invoice_id === warehouseBatch.invoice_id && ii.product_id === product.id
+            ii => ii.warehouse_batch_id === allocation.warehouse_batch_id
           );
+          
+          console.log(`🔍 Looking for invoice item:`, {
+            warehouse_batch_id: allocation.warehouse_batch_id,
+            product_name: productName,
+            found: !!invoiceItem,
+            discount: invoiceItem?.discount_percent
+          });
           
           const discount = invoiceItem?.discount_percent ? parseFloat(invoiceItem.discount_percent) : 0;
           let unitPriceBeforeDiscount = unitPrice;

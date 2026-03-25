@@ -2312,6 +2312,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           discount_percent: number | null
+          farm_id: string | null
           id: string
           invoice_id: string
           line_no: number | null
@@ -2321,12 +2322,14 @@ export type Database = {
           total_price: number | null
           unit_price: number | null
           updated_at: string
+          warehouse_batch_id: string | null
         }
         Insert: {
           batch_id?: string | null
           created_at?: string | null
           description?: string | null
           discount_percent?: number | null
+          farm_id?: string | null
           id?: string
           invoice_id: string
           line_no?: number | null
@@ -2336,12 +2339,14 @@ export type Database = {
           total_price?: number | null
           unit_price?: number | null
           updated_at?: string
+          warehouse_batch_id?: string | null
         }
         Update: {
           batch_id?: string | null
           created_at?: string | null
           description?: string | null
           discount_percent?: number | null
+          farm_id?: string | null
           id?: string
           invoice_id?: string
           line_no?: number | null
@@ -2351,6 +2356,7 @@ export type Database = {
           total_price?: number | null
           unit_price?: number | null
           updated_at?: string
+          warehouse_batch_id?: string | null
         }
         Relationships: [
           {
