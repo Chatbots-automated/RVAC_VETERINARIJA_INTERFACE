@@ -1,5 +1,6 @@
 export type ProductCategory = 'medicines' | 'prevention' | 'vakcina' | 'reproduction' | 'treatment_materials' | 'hygiene' | 'biocide' | 'technical' | 'svirkstukai' | 'bolusas';
 export type Unit = 'ml' | 'l' | 'g' | 'kg' | 'vnt' | 'pcs' | 'tabletkė' | 'bolus' | 'syringe';
+export type AdministrationRoute = 'iv' | 'im' | 'sc' | 'iu' | 'imm' | 'pos';
 
 export interface Product {
   id: string;
@@ -10,6 +11,20 @@ export interface Product {
   active_substance: string | null;
   registration_code: string | null;
   withdrawal_days: number | null;
+  withdrawal_days_meat?: number | null;
+  withdrawal_days_milk?: number | null;
+  withdrawal_iv_meat?: number | null;
+  withdrawal_iv_milk?: number | null;
+  withdrawal_im_meat?: number | null;
+  withdrawal_im_milk?: number | null;
+  withdrawal_sc_meat?: number | null;
+  withdrawal_sc_milk?: number | null;
+  withdrawal_iu_meat?: number | null;
+  withdrawal_iu_milk?: number | null;
+  withdrawal_imm_meat?: number | null;
+  withdrawal_imm_milk?: number | null;
+  withdrawal_pos_meat?: number | null;
+  withdrawal_pos_milk?: number | null;
   dosage_notes: string | null;
   is_active: boolean;
   package_weight_g: number | null;
@@ -71,6 +86,7 @@ export interface Treatment {
   tests: string | null;
   clinical_diagnosis: string | null;
   outcome: string | null;
+  outcome_date: string | null;
   services: string | null;
   withdrawal_until: string | null;
   vet_name: string | null;
@@ -83,13 +99,14 @@ export interface Treatment {
 
 export interface UsageItem {
   id: string;
-  treatment_id: string | null;  // Nullable - vaccinations don't have treatment_id
+  treatment_id: string | null;
   product_id: string;
   batch_id: string;
   qty: number;
   unit: Unit;
   purpose: string;
-  vaccination_id?: string | null;  // Links to vaccination if this usage came from a vaccination
+  vaccination_id?: string | null;
+  administration_route?: string | null;
   created_at: string;
 }
 

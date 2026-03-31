@@ -480,6 +480,9 @@ export function TreatmentHistory() {
                                         <span className="font-medium text-gray-900">{product.product_name}</span>
                                         <div className="flex items-center gap-2">
                                           <span className="text-gray-700">{product.quantity} {product.unit}</span>
+                                          {product.administration_route && (
+                                            <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">{product.administration_route}</span>
+                                          )}
                                           {product.batch_lot && (
                                             <span className="text-xs text-gray-500">Serija: {product.batch_lot}</span>
                                           )}
@@ -517,6 +520,11 @@ export function TreatmentHistory() {
                                           <div>Trukmė: <span className="font-semibold text-gray-900">{course.days} d.</span></div>
                                           <div>Duota dozių: <span className="font-semibold text-gray-900">{course.doses_administered}/{course.days}</span></div>
                                         </div>
+                                        {course.administration_route && (
+                                          <div className="text-xs">
+                                            <span className="font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Būdas: {course.administration_route}</span>
+                                          </div>
+                                        )}
                                         {course.batch_lot && (
                                           <div className="text-xs text-gray-500">Serija: {course.batch_lot}</div>
                                         )}

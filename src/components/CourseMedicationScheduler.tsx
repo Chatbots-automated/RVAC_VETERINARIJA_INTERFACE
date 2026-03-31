@@ -9,6 +9,18 @@ interface Product {
   primary_pack_unit: string;
   withdrawal_days_milk?: number;
   withdrawal_days_meat?: number;
+  withdrawal_iv_meat?: number;
+  withdrawal_iv_milk?: number;
+  withdrawal_im_meat?: number;
+  withdrawal_im_milk?: number;
+  withdrawal_sc_meat?: number;
+  withdrawal_sc_milk?: number;
+  withdrawal_iu_meat?: number;
+  withdrawal_iu_milk?: number;
+  withdrawal_imm_meat?: number;
+  withdrawal_imm_milk?: number;
+  withdrawal_pos_meat?: number;
+  withdrawal_pos_milk?: number;
 }
 
 interface Batch {
@@ -26,6 +38,7 @@ interface ScheduledMedication {
   unit: string;
   teat: string | null;
   purpose: string;
+  administration_route?: string;
 }
 
 interface DateMedications {
@@ -163,7 +176,8 @@ export function CourseMedicationScheduler({
       qty: null,
       unit: 'ml',
       teat: null,
-      purpose: 'Gydymas'
+      purpose: 'Gydymas',
+      administration_route: ''
     };
     const newSchedule = new Map(dateSchedule);
     newSchedule.set(date, [...currentMeds, newMed]);
@@ -457,6 +471,36 @@ export function CourseMedicationScheduler({
                                 />
                               </div>
                             </div>
+
+                            {/* Administration Route Buttons */}
+                            {selectedProduct && (
+                              <div className="mt-3 space-y-2">
+                                <label className="block text-xs font-medium text-gray-700">Būdas</label>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {[
+                                    { code: 'iv', label: 'i.v' },
+                                    { code: 'im', label: 'i.m' },
+                                    { code: 'sc', label: 's.c' },
+                                    { code: 'iu', label: 'i.u' },
+                                    { code: 'imm', label: 'i.mm' },
+                                    { code: 'pos', label: 'p.o.s' }
+                                  ].map(route => (
+                                    <button
+                                      key={route.code}
+                                      type="button"
+                                      onClick={() => updateMedication(date, med.id, 'administration_route', route.code)}
+                                      className={`px-3 py-1 text-xs font-medium rounded border transition-colors ${
+                                        med.administration_route === route.code
+                                          ? 'bg-blue-600 text-white border-blue-600'
+                                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      {route.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             <button
                               onClick={() => removeMedication(date, med.id)}

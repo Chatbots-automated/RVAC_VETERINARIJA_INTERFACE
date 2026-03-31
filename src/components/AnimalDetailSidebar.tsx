@@ -1823,6 +1823,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     tests: '',
     animal_condition: '',
     outcome: '',
+    outcome_date: '',
     services: '',
     withdrawal_until: '',
     notes: '',
@@ -1836,6 +1837,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
       is_course: boolean;
       course_days: string;
       teat: string;
+      administration_route?: string;
     }>,
     courseMedicationSchedule: null as any,
   });
@@ -1971,6 +1973,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
           tests: treatment.tests || '',
           animal_condition: treatment.animal_condition || '',
           outcome: treatment.outcome || '',
+          outcome_date: treatment.outcome_date || '',
           services: treatment.services || '',
           withdrawal_until: treatment.withdrawal_until || '',
           notes: treatment.notes || '',
@@ -2549,6 +2552,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 tests: treatmentData.tests ? treatmentData.tests : null,
                 animal_condition: treatmentData.animal_condition ? treatmentData.animal_condition : null,
                 outcome: treatmentData.outcome ? treatmentData.outcome : null,
+                outcome_date: treatmentData.outcome_date ? treatmentData.outcome_date : null,
                 services: treatmentData.services ? treatmentData.services : null,
                 vet_name: formData.vet_name ? formData.vet_name : null,
                 notes: treatmentData.notes ? treatmentData.notes : null,
@@ -2584,6 +2588,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 tests: treatmentData.tests ? treatmentData.tests : null,
                 animal_condition: treatmentData.animal_condition ? treatmentData.animal_condition : null,
                 outcome: treatmentData.outcome ? treatmentData.outcome : null,
+                outcome_date: treatmentData.outcome_date ? treatmentData.outcome_date : null,
                 services: treatmentData.services ? treatmentData.services : null,
                 vet_name: formData.vet_name ? formData.vet_name : null,
                 notes: treatmentData.notes ? treatmentData.notes : null,
@@ -2679,6 +2684,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 unit: med.unit,
                 start_date: formData.visit_datetime.split('T')[0],
                 teat: med.teat || null,
+                administration_route: med.administration_route || null,
               });
 
             if (courseError) throw courseError;
@@ -2707,6 +2713,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                   unit: med.unit,
                   purpose: med.purpose ? med.purpose : null,
                   teat: med.teat || null,
+                  administration_route: med.administration_route || null,
                 });
 
               if (usageError) {
@@ -2732,6 +2739,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 unit: med.unit,
                 purpose: med.purpose || 'Gydymas',
                 teat: med.teat || null,
+                administration_route: med.administration_route || null,
               };
             });
 
@@ -2909,6 +2917,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               unit: med.unit,
               purpose: med.purpose || 'Gydymas',
               teat: med.teat || null,
+              administration_route: med.administration_route || null,
             }));
 
             // Filter out today's date to avoid creating a duplicate visit
@@ -3007,6 +3016,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                       unit: med.unit,
                       purpose: med.purpose || 'Gydymas',
                       teat: med.teat || null,
+                      administration_route: med.administration_route || null,
                     }));
                     
                     const { error: usageError } = await supabase
@@ -3692,6 +3702,16 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ligos baigtis (data)</label>
+                <input
+                  type="date"
+                  value={treatmentData.outcome_date}
+                  onChange={(e) => setTreatmentData({ ...treatmentData, outcome_date: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                />
+              </div>
+
               {/* SECTION 1: SINGLE-USE TREATMENT (TODAY ONLY) */}
               <div className="bg-blue-50 border border-blue-300 rounded-lg p-4 space-y-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -3790,22 +3810,75 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                        {selectedProduct && (selectedProduct.withdrawal_days_milk || selectedProduct.withdrawal_days_meat) && (
+
+                        {/* Administration Route Buttons */}
+                        {selectedProduct && (
+                          <div className="space-y-2">
+                            <label className="block text-xs font-medium text-gray-700">Būdas</label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                { code: 'iv', label: 'i.v' },
+                                { code: 'im', label: 'i.m' },
+                                { code: 'sc', label: 's.c' },
+                                { code: 'iu', label: 'i.u' },
+                                { code: 'imm', label: 'i.mm' },
+                                { code: 'pos', label: 'p.o.s' }
+                              ].map(route => (
+                                <button
+                                  key={route.code}
+                                  type="button"
+                                  onClick={() => {
+                                    const newMeds = [...treatmentData.medications];
+                                    newMeds[idx].administration_route = route.code;
+                                    setTreatmentData({ ...treatmentData, medications: newMeds });
+                                  }}
+                                  className={`px-3 py-1 text-xs font-medium rounded border transition-colors ${
+                                    med.administration_route === route.code
+                                      ? 'bg-blue-600 text-white border-blue-600'
+                                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                  }`}
+                                >
+                                  {route.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {selectedProduct && (selectedProduct.withdrawal_days_milk || selectedProduct.withdrawal_days_meat || med.administration_route) && (
                           <div className="text-xs bg-amber-50 border-2 border-amber-300 rounded px-3 py-2">
                             <div className="flex items-center gap-1 mb-1">
                               <AlertCircle className="w-4 h-4 text-amber-600" />
                               <span className="font-bold text-amber-900">Karencinės dienos:</span>
                             </div>
                             <div className="flex gap-4">
-                              {selectedProduct.withdrawal_days_milk && (
-                                <span className="text-blue-700 font-semibold">
-                                  🥛 Pienas: {selectedProduct.withdrawal_days_milk} d.
-                                </span>
+                              {med.administration_route && (
+                                <>
+                                  {selectedProduct[`withdrawal_${med.administration_route}_milk` as keyof typeof selectedProduct] && (
+                                    <span className="text-blue-700 font-semibold">
+                                      🥛 Pienas: {selectedProduct[`withdrawal_${med.administration_route}_milk` as keyof typeof selectedProduct] as number} d.
+                                    </span>
+                                  )}
+                                  {selectedProduct[`withdrawal_${med.administration_route}_meat` as keyof typeof selectedProduct] && (
+                                    <span className="text-red-700 font-semibold">
+                                      🥩 Mėsa: {selectedProduct[`withdrawal_${med.administration_route}_meat` as keyof typeof selectedProduct] as number} d.
+                                    </span>
+                                  )}
+                                </>
                               )}
-                              {selectedProduct.withdrawal_days_meat && (
-                                <span className="text-red-700 font-semibold">
-                                  🥩 Mėsa: {selectedProduct.withdrawal_days_meat} d.
-                                </span>
+                              {!med.administration_route && (
+                                <>
+                                  {selectedProduct.withdrawal_days_milk && (
+                                    <span className="text-blue-700 font-semibold">
+                                      🥛 Pienas: {selectedProduct.withdrawal_days_milk} d.
+                                    </span>
+                                  )}
+                                  {selectedProduct.withdrawal_days_meat && (
+                                    <span className="text-red-700 font-semibold">
+                                      🥩 Mėsa: {selectedProduct.withdrawal_days_meat} d.
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
@@ -3818,7 +3891,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                     onClick={() => {
                       setTreatmentData({
                         ...treatmentData,
-                        medications: [...treatmentData.medications, { product_id: '', batch_id: '', qty: '', unit: 'ml', purpose: 'Gydymas', is_course: false, course_days: '1', teat: '' }]
+                        medications: [...treatmentData.medications, { product_id: '', batch_id: '', qty: '', unit: 'ml', purpose: 'Gydymas', is_course: false, course_days: '1', teat: '', administration_route: '' }]
                       });
                     }}
                     className="w-full px-3 py-2 border-2 border-dashed border-blue-300 rounded-lg text-blue-600 hover:bg-blue-50 flex items-center justify-center gap-2 font-medium"

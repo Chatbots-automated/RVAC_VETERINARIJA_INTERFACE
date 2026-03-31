@@ -28,6 +28,18 @@ export function Products() {
     active_substance: '',
     withdrawal_days_meat: '0',
     withdrawal_days_milk: '0',
+    withdrawal_iv_meat: '',
+    withdrawal_iv_milk: '',
+    withdrawal_im_meat: '',
+    withdrawal_im_milk: '',
+    withdrawal_sc_meat: '',
+    withdrawal_sc_milk: '',
+    withdrawal_iu_meat: '',
+    withdrawal_iu_milk: '',
+    withdrawal_imm_meat: '',
+    withdrawal_imm_milk: '',
+    withdrawal_pos_meat: '',
+    withdrawal_pos_milk: '',
     dosage_notes: '',
   };
 
@@ -95,6 +107,18 @@ export function Products() {
         active_substance: formData.active_substance || null,
         withdrawal_days_meat: (['medicines', 'svirkstukai'].includes(formData.category) && formData.withdrawal_days_meat) ? parseInt(formData.withdrawal_days_meat) : null,
         withdrawal_days_milk: (['medicines', 'svirkstukai'].includes(formData.category) && formData.withdrawal_days_milk) ? parseInt(formData.withdrawal_days_milk) : null,
+        withdrawal_iv_meat: formData.withdrawal_iv_meat ? parseInt(formData.withdrawal_iv_meat) : null,
+        withdrawal_iv_milk: formData.withdrawal_iv_milk ? parseInt(formData.withdrawal_iv_milk) : null,
+        withdrawal_im_meat: formData.withdrawal_im_meat ? parseInt(formData.withdrawal_im_meat) : null,
+        withdrawal_im_milk: formData.withdrawal_im_milk ? parseInt(formData.withdrawal_im_milk) : null,
+        withdrawal_sc_meat: formData.withdrawal_sc_meat ? parseInt(formData.withdrawal_sc_meat) : null,
+        withdrawal_sc_milk: formData.withdrawal_sc_milk ? parseInt(formData.withdrawal_sc_milk) : null,
+        withdrawal_iu_meat: formData.withdrawal_iu_meat ? parseInt(formData.withdrawal_iu_meat) : null,
+        withdrawal_iu_milk: formData.withdrawal_iu_milk ? parseInt(formData.withdrawal_iu_milk) : null,
+        withdrawal_imm_meat: formData.withdrawal_imm_meat ? parseInt(formData.withdrawal_imm_meat) : null,
+        withdrawal_imm_milk: formData.withdrawal_imm_milk ? parseInt(formData.withdrawal_imm_milk) : null,
+        withdrawal_pos_meat: formData.withdrawal_pos_meat ? parseInt(formData.withdrawal_pos_meat) : null,
+        withdrawal_pos_milk: formData.withdrawal_pos_milk ? parseInt(formData.withdrawal_pos_milk) : null,
         dosage_notes: formData.dosage_notes || null,
         is_active: true,
       };
@@ -156,6 +180,18 @@ export function Products() {
       active_substance: product.active_substance || '',
       withdrawal_days_meat: product.withdrawal_days_meat?.toString() || '',
       withdrawal_days_milk: product.withdrawal_days_milk?.toString() || '',
+      withdrawal_iv_meat: product.withdrawal_iv_meat?.toString() || '',
+      withdrawal_iv_milk: product.withdrawal_iv_milk?.toString() || '',
+      withdrawal_im_meat: product.withdrawal_im_meat?.toString() || '',
+      withdrawal_im_milk: product.withdrawal_im_milk?.toString() || '',
+      withdrawal_sc_meat: product.withdrawal_sc_meat?.toString() || '',
+      withdrawal_sc_milk: product.withdrawal_sc_milk?.toString() || '',
+      withdrawal_iu_meat: product.withdrawal_iu_meat?.toString() || '',
+      withdrawal_iu_milk: product.withdrawal_iu_milk?.toString() || '',
+      withdrawal_imm_meat: product.withdrawal_imm_meat?.toString() || '',
+      withdrawal_imm_milk: product.withdrawal_imm_milk?.toString() || '',
+      withdrawal_pos_meat: product.withdrawal_pos_meat?.toString() || '',
+      withdrawal_pos_milk: product.withdrawal_pos_milk?.toString() || '',
       dosage_notes: product.dosage_notes || '',
     });
   };
@@ -356,6 +392,133 @@ export function Products() {
                 className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-blue-50"
                 placeholder="5"
               />
+            </div>
+
+            {/* Route-specific withdrawal periods */}
+            <div className="md:col-span-2 bg-gray-50 border border-gray-300 rounded-lg p-4">
+              <h4 className="text-sm font-bold text-gray-900 mb-3">Karencijos pagal būdą (dienomis)</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.v (į veną) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_iv_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_iv_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.v - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_iv_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_iv_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.m (į raumenį) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_im_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_im_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.m - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_im_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_im_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">s.c (po oda) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_sc_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_sc_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">s.c - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_sc_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_sc_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.u (į gimdą) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_iu_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_iu_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.u - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_iu_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_iu_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.mm (į spenį) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_imm_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_imm_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">i.mm - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_imm_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_imm_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">p.o.s (per burną) - Mėsa</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_pos_meat}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_pos_meat: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">p.o.s - Pienas</label>
+                  <input
+                    type="number"
+                    value={formData.withdrawal_pos_milk}
+                    onChange={(e) => setFormData({ ...formData, withdrawal_pos_milk: e.target.value })}
+                    className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
             </div>
           </>
         )}

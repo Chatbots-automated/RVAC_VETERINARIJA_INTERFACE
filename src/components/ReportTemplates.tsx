@@ -222,7 +222,7 @@ export function TreatedAnimalsReport({ data }: TreatedAnimalsReportProps) {
                 
                 {/* Column 13: Outcome */}
                 <td className="border-2 border-gray-300 px-2 py-2 text-[11px] text-gray-900">
-                  {row.treatment_outcome || '-'}
+                  {row.outcome_date ? formatDateLT(row.outcome_date) : (row.treatment_outcome || '-')}
                 </td>
                 
                 {/* Column 14: Veterinarian name */}
