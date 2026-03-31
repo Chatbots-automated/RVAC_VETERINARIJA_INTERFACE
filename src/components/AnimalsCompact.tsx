@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Animal, AnimalVisitSummary } from '../lib/types';
 import { useAuth } from '../contexts/AuthContext';
 import { useFarm } from '../contexts/FarmContext';
-import { Plus, Edit2, Save, X, Search, RefreshCw, Calendar, Clock } from 'lucide-react';
+import { Plus, Edit2, Save, X, Search, RefreshCw, Calendar, Clock, Trash2 } from 'lucide-react';
 import { AnimalDetailSidebar } from './AnimalDetailSidebar';
 import { formatDateTimeLT } from '../lib/formatters';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
@@ -20,6 +20,7 @@ export function AnimalsCompact() {
   const [editing, setEditing] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deletingAnimalId, setDeletingAnimalId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     tag_no: '',
@@ -241,6 +242,76 @@ export function AnimalsCompact() {
     }
   };
 
+  const handleDelete = async (animal: Animal) => {
+    if (!selectedFarm) return;
+
+    const confirmed = confirm(
+      `Ar tikrai norite ištrinti gyvūną ${animal.tag_no}?\n\n` +
+      `⚠️ Gyvūnas gali būti ištrintas tik jei neturi:\n` +
+      `• Gydymų\n` +
+      `• Vakcinacijų\n` +
+      `• Vizitų\n` +
+      `• Sėklinimų\n` +
+      `• Sinchronizacijų\n\n` +
+      `Šis veiksmas negali būti atšauktas!`
+    );
+
+    if (!confirmed) return;
+
+    setDeletingAnimalId(animal.id);
+
+    try {
+      // Check if animal has any related records
+      const [treatmentsRes, vaccinationsRes, visitsRes, inseminationsRes, synchronizationsRes] = await Promise.all([
+        supabase.from('treatments').select('id').eq('animal_id', animal.id).limit(1),
+        supabase.from('vaccinations').select('id').eq('animal_id', animal.id).limit(1),
+        supabase.from('animal_visits').select('id').eq('animal_id', animal.id).limit(1),
+        supabase.from('insemination_records').select('id').eq('animal_id', animal.id).limit(1),
+        supabase.from('animal_synchronizations').select('id').eq('animal_id', animal.id).limit(1),
+      ]);
+
+      const hasRecords = 
+        (treatmentsRes.data && treatmentsRes.data.length > 0) ||
+        (vaccinationsRes.data && vaccinationsRes.data.length > 0) ||
+        (visitsRes.data && visitsRes.data.length > 0) ||
+        (inseminationsRes.data && inseminationsRes.data.length > 0) ||
+        (synchronizationsRes.data && synchronizationsRes.data.length > 0);
+
+      if (hasRecords) {
+        alert(
+          `Negalima ištrinti gyvūno ${animal.tag_no}!\n\n` +
+          `Gyvūnas turi susijusių įrašų (gydymai, vakcinacijos, vizitai, sėklinimai ar sinchronizacijos).\n\n` +
+          `Jei norite pašalinti gyvūną iš sąrašo, pažymėkite jį kaip neaktyvų.`
+        );
+        return;
+      }
+
+      // Delete the animal
+      const { error } = await supabase
+        .from('animals')
+        .delete()
+        .eq('id', animal.id);
+
+      if (error) throw error;
+
+      await logAction('delete', 'animals', animal.id, null, { tag_no: animal.tag_no });
+      
+      alert(`Gyvūnas ${animal.tag_no} sėkmingai ištrintas!`);
+      
+      // Reload data
+      await loadData();
+      
+      // Close detail panel if deleted animal was selected
+      if (selectedAnimal?.id === animal.id) {
+        setSelectedAnimal(null);
+      }
+    } catch (error: any) {
+      alert('Klaida trinant gyvūną: ' + error.message);
+    } finally {
+      setDeletingAnimalId(null);
+    }
+  };
+
   const filteredAnimals = animals.filter(animal => {
     // Filter by general search term
     if (searchTerm) {
@@ -425,12 +496,27 @@ export function AnimalsCompact() {
                           )}
                         </td>
                         <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                          <button
-                            onClick={() => setEditing(animal.id)}
-                            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setEditing(animal.id)}
+                              className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+                              title="Redaguoti"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(animal)}
+                              disabled={deletingAnimalId === animal.id}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50"
+                              title="Ištrinti"
+                            >
+                              {deletingAnimalId === animal.id ? (
+                                <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
                         </td>
                       </>
                     )}

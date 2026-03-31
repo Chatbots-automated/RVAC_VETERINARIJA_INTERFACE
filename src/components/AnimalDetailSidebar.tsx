@@ -2217,7 +2217,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
       setShowNewDiseaseModal(false);
 
       await logAction('create_disease', 'diseases', data.id, null, { name: data.name });
-      showNotification('Liga sėkmingai sukurta', 'success');
+      showNotification('Diagnozė sėkmingai sukurta', 'success');
     } catch (error: any) {
       console.error('Error creating disease:', error);
       showNotification('Klaida kuriant ligą: ' + error.message, 'error');
@@ -3622,7 +3622,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Liga</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Klinikinė diagnozė</label>
                   <select
                     value={treatmentData.disease_id}
                     onChange={(e) => {
@@ -3634,11 +3634,11 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   >
-                    <option value="">Pasirinkite ligą</option>
+                    <option value="">Pasirinkite diagnozę</option>
                     {diseases.map(disease => (
                       <option key={disease.id} value={disease.id}>{disease.name}</option>
                     ))}
-                    <option value="__new__">+ Sukurti naują ligą</option>
+                    <option value="__new__">+ Sukurti naują diagnozę</option>
                   </select>
                 </div>
 
@@ -3671,12 +3671,24 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Klinikinis diagnozas</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Klinikinis tyrimas</label>
                 <textarea
                   value={treatmentData.clinical_diagnosis}
                   onChange={(e) => setTreatmentData({ ...treatmentData, clinical_diagnosis: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   rows={2}
+                  placeholder="Klinikiniai tyrimai ir pastebėjimai..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Kiti tyrimai</label>
+                <textarea
+                  value={treatmentData.tests}
+                  onChange={(e) => setTreatmentData({ ...treatmentData, tests: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                  rows={2}
+                  placeholder="Papildomi tyrimai, laboratoriniai rezultatai..."
                 />
               </div>
 
@@ -4602,11 +4614,11 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
       {showNewDiseaseModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Sukurti naują ligą</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Sukurti naują diagnozę</h3>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ligos pavadinimas *
+                  Diagnozės pavadinimas *
                 </label>
                 <input
                   type="text"

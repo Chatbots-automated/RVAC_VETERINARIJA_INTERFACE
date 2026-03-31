@@ -22,6 +22,15 @@
     -moz-appearance: textfield;
   }
 
+  /* Prevent scroll wheel from changing number input values */
+  input[type="number"]:focus {
+    pointer-events: auto;
+  }
+  
+  input[type="number"] {
+    pointer-events: auto;
+  }
+
   input[type="date"] {
     position: relative;
   }
