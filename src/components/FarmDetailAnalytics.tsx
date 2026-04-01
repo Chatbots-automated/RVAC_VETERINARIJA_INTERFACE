@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { allocationUnitPricesFromBatchAndInvoice } from '../lib/invoicePricing';
 import { 
   ArrowLeft, 
   Package, 
-  Euro,
   Download
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -26,6 +26,8 @@ interface AllocatedStockSummary {
   avg_price_before_discount: number;
   total_discount: number;
   total_value: number;
+  /** Remaining stock value at pre-discount unit price */
+  remaining_value_before_discount: number;
 }
 
 export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: FarmDetailProps) {
@@ -47,6 +49,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         .from('farm_stock_allocations')
         .select(`
           id,
+          product_id,
           allocated_qty,
           created_at,
           warehouse_batch_id,
@@ -99,7 +102,6 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         }
         
         invoiceItemsData = data || [];
-        console.log('📋 Invoice items loaded:', invoiceItemsData.length, invoiceItemsData);
       }
 
       if (allocationsData) {
@@ -115,44 +117,45 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           const allocatedQty = parseFloat(allocation.allocated_qty) || 0;
           const purchasePrice = parseFloat(warehouseBatch.purchase_price) || 0;
           const warehouseReceivedQty = parseFloat(warehouseBatch.received_qty) || 1;
-          const unitPrice = purchasePrice / warehouseReceivedQty;
 
-          // Find invoice item to get discount info using warehouse_batch_id
-          const invoiceItem = invoiceItemsData?.find(
-            ii => ii.warehouse_batch_id === allocation.warehouse_batch_id
-          );
-          
-          console.log(`🔍 Looking for invoice item:`, {
-            warehouse_batch_id: allocation.warehouse_batch_id,
-            product_name: productName,
-            found: !!invoiceItem,
-            discount: invoiceItem?.discount_percent
+          const invoiceItem =
+            invoiceItemsData?.find(
+              (ii) =>
+                ii.warehouse_batch_id === allocation.warehouse_batch_id &&
+                (ii.product_id === allocation.product_id || !ii.product_id)
+            ) ||
+            invoiceItemsData?.find((ii) => ii.warehouse_batch_id === allocation.warehouse_batch_id);
+
+          const { unitAfterDiscount, unitBeforeDiscount } = allocationUnitPricesFromBatchAndInvoice({
+            purchasePrice,
+            receivedQty: warehouseReceivedQty,
+            invoiceItem,
           });
-          
-          const discount = invoiceItem?.discount_percent ? parseFloat(invoiceItem.discount_percent) : 0;
-          let unitPriceBeforeDiscount = unitPrice;
-          
-          if (discount > 0) {
-            unitPriceBeforeDiscount = unitPrice / (1 - discount / 100);
-          }
 
           // Find corresponding farm batch to get usage
           const farmBatch = batchesData?.find(b => b.allocation_id === allocation.id);
           const qtyLeft = farmBatch ? parseFloat(farmBatch.qty_left) || 0 : allocatedQty;
           const usedQty = allocatedQty - qtyLeft;
 
+          const lineDiscountAmount = (unitBeforeDiscount - unitAfterDiscount) * allocatedQty;
+
           if (productMap.has(productName)) {
             const existing = productMap.get(productName)!;
             existing.total_allocated_qty += allocatedQty;
             existing.total_used_qty += usedQty;
             existing.remaining_qty += qtyLeft;
-            
-            // Weighted average prices
+            existing.total_discount += lineDiscountAmount;
+
             const prevTotalQty = existing.total_allocated_qty - allocatedQty;
-            existing.avg_purchase_price = ((existing.avg_purchase_price * prevTotalQty) + (unitPrice * allocatedQty)) / existing.total_allocated_qty;
-            existing.avg_price_before_discount = ((existing.avg_price_before_discount * prevTotalQty) + (unitPriceBeforeDiscount * allocatedQty)) / existing.total_allocated_qty;
-            existing.total_discount = (existing.avg_price_before_discount - existing.avg_purchase_price) * existing.total_allocated_qty;
+            existing.avg_purchase_price =
+              ((existing.avg_purchase_price * prevTotalQty) + (unitAfterDiscount * allocatedQty)) /
+              existing.total_allocated_qty;
+            existing.avg_price_before_discount =
+              ((existing.avg_price_before_discount * prevTotalQty) + (unitBeforeDiscount * allocatedQty)) /
+              existing.total_allocated_qty;
             existing.total_value = existing.remaining_qty * existing.avg_purchase_price;
+            existing.remaining_value_before_discount =
+              existing.remaining_qty * existing.avg_price_before_discount;
           } else {
             productMap.set(productName, {
               product_name: productName,
@@ -161,12 +164,17 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               total_allocated_qty: allocatedQty,
               total_used_qty: usedQty,
               remaining_qty: qtyLeft,
-              avg_purchase_price: unitPrice,
-              avg_price_before_discount: unitPriceBeforeDiscount,
-              total_discount: (unitPriceBeforeDiscount - unitPrice) * allocatedQty,
-              total_value: qtyLeft * unitPrice
+              avg_purchase_price: unitAfterDiscount,
+              avg_price_before_discount: unitBeforeDiscount,
+              total_discount: lineDiscountAmount,
+              total_value: qtyLeft * unitAfterDiscount,
+              remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
             });
           }
+        });
+
+        productMap.forEach((row) => {
+          row.remaining_value_before_discount = row.remaining_qty * row.avg_price_before_discount;
         });
 
         setAllocatedStock(Array.from(productMap.values()).sort((a, b) => b.total_value - a.total_value));
@@ -179,6 +187,10 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
   };
 
   const totalStockValue = allocatedStock.reduce((sum, item) => sum + item.total_value, 0);
+  const totalStockValueBeforeDiscount = allocatedStock.reduce(
+    (sum, item) => sum + item.remaining_qty * item.avg_price_before_discount,
+    0
+  );
 
   const handleExport = () => {
     const exportData = allocatedStock.map(item => ({
@@ -190,7 +202,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       'Kaina (be nuol.)': item.avg_price_before_discount.toFixed(4),
       'Kaina (su nuol.)': item.avg_purchase_price.toFixed(4),
       'Nuolaida': item.total_discount.toFixed(2),
-      'Bendra vertė': item.total_value.toFixed(2)
+      'Likutis vertė (be nuol.)': item.remaining_value_before_discount.toFixed(2),
+      'Likutis vertė (su nuol.)': item.total_value.toFixed(2)
     }));
 
     const ws = XLSX.utils.json_to_sheet(exportData);
@@ -218,14 +231,20 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           <ArrowLeft className="w-5 h-5" />
           Grįžti į sąrašą
         </button>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold">{farmName}</h1>
             <p className="text-blue-100 mt-1">Ūkio kodas: {farmCode}</p>
           </div>
-          <div className="text-right">
-            <p className="text-sm text-blue-100">Bendra atsargų vertė</p>
-            <p className="text-4xl font-bold">€{totalStockValue.toFixed(2)}</p>
+          <div className="text-right space-y-1">
+            <div>
+              <p className="text-sm text-blue-100">Vertė be nuolaidos (likutis)</p>
+              <p className="text-2xl font-bold text-white/95">€{totalStockValueBeforeDiscount.toFixed(2)}</p>
+            </div>
+            <div>
+              <p className="text-sm text-blue-100">Vertė su nuolaida (likutis)</p>
+              <p className="text-4xl font-bold">€{totalStockValue.toFixed(2)}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -303,7 +322,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (be nuol.)</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (su nuol.)</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Nuolaida</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Vertė</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Likutis be nuol.</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Likutis su nuol.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -330,6 +350,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     <td className="px-4 py-3 text-sm text-right text-amber-700 font-medium">
                       {item.total_discount > 0 ? `- €${item.total_discount.toFixed(2)}` : '—'}
                     </td>
+                    <td className="px-4 py-3 text-sm text-right font-semibold text-gray-800">
+                      €{item.remaining_value_before_discount.toFixed(2)}
+                    </td>
                     <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
                       €{item.total_value.toFixed(2)}
                     </td>
@@ -339,17 +362,28 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               <tfoot>
                 <tr className="bg-amber-50 border-t-2 border-amber-200">
                   <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                    Bendra nuolaida:
+                    Bendra nuolaida (paskirstyta):
                   </td>
                   <td className="px-4 py-3 text-sm font-bold text-amber-700 text-right">
                     - €{allocatedStock.reduce((sum, item) => sum + item.total_discount, 0).toFixed(2)}
                   </td>
                   <td className="px-4 py-3"></td>
+                  <td className="px-4 py-3"></td>
+                </tr>
+                <tr className="bg-slate-50 border-t border-slate-200">
+                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                    Likutis bendra vertė be nuolaidos:
+                  </td>
+                  <td className="px-4 py-3 text-sm font-bold text-slate-800 text-right">
+                    €{totalStockValueBeforeDiscount.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3"></td>
                 </tr>
                 <tr className="bg-gray-50 border-t-2 border-gray-300">
                   <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                    Bendra vertė (su nuolaida):
+                    Likutis bendra vertė su nuolaida:
                   </td>
+                  <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
                     €{totalStockValue.toFixed(2)}
                   </td>

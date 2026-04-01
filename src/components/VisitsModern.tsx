@@ -136,11 +136,12 @@ export function VisitsModern() {
   };
 
   const handleDeleteVisit = async (visitId: string, animalDisplay: string) => {
-    if (!confirm(`Ar tikrai norite ištrinti vizitą gyvūnui ${animalDisplay}?`)) {
+    if (!confirm(`Ar tikrai norite ištrinti vizitą gyvūnui ${animalDisplay}?\n\nŠis veiksmas:\n• Ištrina vizito įrašą\n• Grąžina panaudotus vaistus į ūkio atsargas\n• Pašalina susijusius gydymus ir karencijas\n• Negali būti atšauktas`)) {
       return;
     }
 
     try {
+      // Step 1: Get all treatments for this visit
       const { data: treatments, error: treatmentError } = await supabase
         .from('treatments')
         .select('id')
@@ -151,13 +152,51 @@ export function VisitsModern() {
       if (treatments && treatments.length > 0) {
         const treatmentIds = treatments.map(t => t.id);
 
-        const { error: usageError } = await supabase
+        // Step 2: Get all usage_items to return stock to farm batches
+        const { data: usageItems, error: usageError } = await supabase
           .from('usage_items')
-          .delete()
+          .select('id, batch_id, qty, farm_id')
           .in('treatment_id', treatmentIds);
 
         if (usageError) throw usageError;
 
+        // Step 3: Return stock to farm batches
+        if (usageItems && usageItems.length > 0) {
+          for (const item of usageItems) {
+            const { data: batch, error: batchError } = await supabase
+              .from('batches')
+              .select('qty_left, status')
+              .eq('id', item.batch_id)
+              .single();
+
+            if (batchError) {
+              console.error('Error fetching batch:', batchError);
+              continue;
+            }
+
+            const newQtyLeft = (batch.qty_left || 0) + item.qty;
+            const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
+
+            await supabase
+              .from('batches')
+              .update({ 
+                qty_left: newQtyLeft,
+                status: newStatus,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', item.batch_id);
+          }
+        }
+
+        // Step 4: Delete usage_items
+        const { error: deleteUsageError } = await supabase
+          .from('usage_items')
+          .delete()
+          .in('treatment_id', treatmentIds);
+
+        if (deleteUsageError) throw deleteUsageError;
+
+        // Step 5: Delete treatments
         const { error: deleteError } = await supabase
           .from('treatments')
           .delete()
@@ -166,6 +205,7 @@ export function VisitsModern() {
         if (deleteError) throw deleteError;
       }
 
+      // Step 6: Delete the visit
       const { error: visitError } = await supabase
         .from('animal_visits')
         .delete()
@@ -176,7 +216,7 @@ export function VisitsModern() {
       setVisits(prev => prev.filter(v => v.id !== visitId));
       logAction('delete_visit', 'animal_visits', visitId);
 
-      alert('Vizitas sėkmingai ištrintas');
+      alert('Vizitas sėkmingai ištrintas! Vaistai grąžinti į ūkio atsargas.');
     } catch (error) {
       console.error('Error deleting visit:', error);
       alert('Klaida trinant vizitą');

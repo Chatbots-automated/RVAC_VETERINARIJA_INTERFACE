@@ -18,30 +18,46 @@ SELECT
     a.species,
     a.sex,
     t.reg_date AS treatment_date,
-    t.withdrawal_until_meat,
-    t.withdrawal_until_milk,
-    -- Original withdrawal days (without eco-farm multiplier)
+    -- Original withdrawal dates
+    t.withdrawal_until_meat AS withdrawal_until_meat_original,
+    t.withdrawal_until_milk AS withdrawal_until_milk_original,
+    -- Eco-farm adjusted withdrawal dates (date field)
     CASE 
-        WHEN t.withdrawal_until_meat IS NOT NULL AND t.withdrawal_until_meat >= CURRENT_DATE 
-        THEN (t.withdrawal_until_meat - CURRENT_DATE)
-        ELSE 0
-    END AS withdrawal_days_meat_original,
-    CASE 
-        WHEN t.withdrawal_until_milk IS NOT NULL AND t.withdrawal_until_milk >= CURRENT_DATE 
-        THEN (t.withdrawal_until_milk - CURRENT_DATE)
-        ELSE 0
-    END AS withdrawal_days_milk_original,
-    -- Eco-farm adjusted withdrawal days
-    CASE 
-        WHEN f.is_eco_farm THEN
+        WHEN f.is_eco_farm AND t.withdrawal_until_meat IS NOT NULL THEN
             CASE 
-                WHEN t.withdrawal_until_meat IS NOT NULL AND t.withdrawal_until_meat >= CURRENT_DATE THEN
+                WHEN t.withdrawal_until_meat >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (t.withdrawal_until_meat - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (t.reg_date + ((t.withdrawal_until_meat - t.reg_date) * 2) * INTERVAL '1 day')::date
+                    END
+                ELSE (CURRENT_DATE + INTERVAL '2 days')::date
+            END
+        ELSE t.withdrawal_until_meat
+    END AS withdrawal_until_meat,
+    CASE 
+        WHEN f.is_eco_farm AND t.withdrawal_until_milk IS NOT NULL THEN
+            CASE 
+                WHEN t.withdrawal_until_milk >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (t.withdrawal_until_milk - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (t.reg_date + ((t.withdrawal_until_milk - t.reg_date) * 2) * INTERVAL '1 day')::date
+                    END
+                ELSE (CURRENT_DATE + INTERVAL '2 days')::date
+            END
+        ELSE t.withdrawal_until_milk
+    END AS withdrawal_until_milk,
+    -- Eco-farm adjusted withdrawal days (calculated from adjusted dates)
+    CASE 
+        WHEN f.is_eco_farm AND t.withdrawal_until_meat IS NOT NULL THEN
+            CASE 
+                WHEN t.withdrawal_until_meat >= CURRENT_DATE THEN
                     CASE 
                         WHEN (t.withdrawal_until_meat - CURRENT_DATE) = 0 THEN 2
                         ELSE (t.withdrawal_until_meat - CURRENT_DATE) * 2
                     END
-                WHEN t.withdrawal_until_meat IS NOT NULL THEN 2  -- Past withdrawal becomes 2 for eco
-                ELSE 0
+                ELSE 2
             END
         ELSE
             CASE 
@@ -51,15 +67,14 @@ SELECT
             END
     END AS withdrawal_days_meat,
     CASE 
-        WHEN f.is_eco_farm THEN
+        WHEN f.is_eco_farm AND t.withdrawal_until_milk IS NOT NULL THEN
             CASE 
-                WHEN t.withdrawal_until_milk IS NOT NULL AND t.withdrawal_until_milk >= CURRENT_DATE THEN
+                WHEN t.withdrawal_until_milk >= CURRENT_DATE THEN
                     CASE 
                         WHEN (t.withdrawal_until_milk - CURRENT_DATE) = 0 THEN 2
                         ELSE (t.withdrawal_until_milk - CURRENT_DATE) * 2
                     END
-                WHEN t.withdrawal_until_milk IS NOT NULL THEN 2  -- Past withdrawal becomes 2 for eco
-                ELSE 0
+                ELSE 2
             END
         ELSE
             CASE 
@@ -114,30 +129,46 @@ SELECT
     a.holder_name AS owner_name,
     a.holder_address AS owner_address,
     t.reg_date AS treatment_date,
-    t.withdrawal_until_meat,
-    t.withdrawal_until_milk,
-    -- Original withdrawal days
+    -- Original withdrawal dates
+    t.withdrawal_until_meat AS withdrawal_until_meat_original,
+    t.withdrawal_until_milk AS withdrawal_until_milk_original,
+    -- Eco-farm adjusted withdrawal dates (date field)
     CASE 
-        WHEN t.withdrawal_until_meat IS NOT NULL AND t.withdrawal_until_meat >= CURRENT_DATE 
-        THEN (t.withdrawal_until_meat - CURRENT_DATE)
-        ELSE 0
-    END AS withdrawal_days_meat_original,
-    CASE 
-        WHEN t.withdrawal_until_milk IS NOT NULL AND t.withdrawal_until_milk >= CURRENT_DATE 
-        THEN (t.withdrawal_until_milk - CURRENT_DATE)
-        ELSE 0
-    END AS withdrawal_days_milk_original,
-    -- Eco-farm adjusted withdrawal days
-    CASE 
-        WHEN f.is_eco_farm THEN
+        WHEN f.is_eco_farm AND t.withdrawal_until_meat IS NOT NULL THEN
             CASE 
-                WHEN t.withdrawal_until_meat IS NOT NULL AND t.withdrawal_until_meat >= CURRENT_DATE THEN
+                WHEN t.withdrawal_until_meat >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (t.withdrawal_until_meat - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (t.reg_date + ((t.withdrawal_until_meat - t.reg_date) * 2) * INTERVAL '1 day')::date
+                    END
+                ELSE (CURRENT_DATE + INTERVAL '2 days')::date
+            END
+        ELSE t.withdrawal_until_meat
+    END AS withdrawal_until_meat,
+    CASE 
+        WHEN f.is_eco_farm AND t.withdrawal_until_milk IS NOT NULL THEN
+            CASE 
+                WHEN t.withdrawal_until_milk >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (t.withdrawal_until_milk - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (t.reg_date + ((t.withdrawal_until_milk - t.reg_date) * 2) * INTERVAL '1 day')::date
+                    END
+                ELSE (CURRENT_DATE + INTERVAL '2 days')::date
+            END
+        ELSE t.withdrawal_until_milk
+    END AS withdrawal_until_milk,
+    -- Eco-farm adjusted withdrawal days (calculated from adjusted dates)
+    CASE 
+        WHEN f.is_eco_farm AND t.withdrawal_until_meat IS NOT NULL THEN
+            CASE 
+                WHEN t.withdrawal_until_meat >= CURRENT_DATE THEN
                     CASE 
                         WHEN (t.withdrawal_until_meat - CURRENT_DATE) = 0 THEN 2
                         ELSE (t.withdrawal_until_meat - CURRENT_DATE) * 2
                     END
-                WHEN t.withdrawal_until_meat IS NOT NULL THEN 2  -- Past withdrawal becomes 2 for eco
-                ELSE 0
+                ELSE 2
             END
         ELSE
             CASE 
@@ -147,15 +178,14 @@ SELECT
             END
     END AS withdrawal_days_meat,
     CASE 
-        WHEN f.is_eco_farm THEN
+        WHEN f.is_eco_farm AND t.withdrawal_until_milk IS NOT NULL THEN
             CASE 
-                WHEN t.withdrawal_until_milk IS NOT NULL AND t.withdrawal_until_milk >= CURRENT_DATE THEN
+                WHEN t.withdrawal_until_milk >= CURRENT_DATE THEN
                     CASE 
                         WHEN (t.withdrawal_until_milk - CURRENT_DATE) = 0 THEN 2
                         ELSE (t.withdrawal_until_milk - CURRENT_DATE) * 2
                     END
-                WHEN t.withdrawal_until_milk IS NOT NULL THEN 2  -- Past withdrawal becomes 2 for eco
-                ELSE 0
+                ELSE 2
             END
         ELSE
             CASE 
@@ -215,4 +245,64 @@ ORDER BY
         COALESCE(t.withdrawal_until_milk, '1900-01-01'::date)
     ) DESC;
 
-COMMENT ON VIEW public.vw_withdrawal_journal_all_farms IS 'Farm-wide withdrawal journal (karencijos žurnalas) showing all animals with withdrawal periods across all farms. Includes eco-farm logic: 0 days becomes 2, others are multiplied by 2';
+COMMENT ON VIEW public.vw_withdrawal_journal_all_farms IS 'Farm-wide withdrawal journal (karencijos žurnalas) showing all animals with withdrawal periods across all farms. Includes eco-farm logic: 0 days becomes 2, others are multiplied by 2. Withdrawal dates are adjusted accordingly.';
+
+-- Update vw_withdrawal_status to include eco-farm adjusted dates
+DROP VIEW IF EXISTS public.vw_withdrawal_status CASCADE;
+
+CREATE OR REPLACE VIEW public.vw_withdrawal_status AS
+SELECT 
+    t.farm_id,
+    t.animal_id,
+    a.tag_no,
+    f.is_eco_farm,
+    -- Original dates
+    MAX(t.withdrawal_until_milk) AS milk_until_original,
+    MAX(t.withdrawal_until_meat) AS meat_until_original,
+    -- Eco-farm adjusted dates
+    CASE 
+        WHEN f.is_eco_farm THEN
+            CASE 
+                WHEN MAX(t.withdrawal_until_milk) IS NOT NULL AND MAX(t.withdrawal_until_milk) >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (MAX(t.withdrawal_until_milk) - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (MAX(t.reg_date) + ((MAX(t.withdrawal_until_milk) - MAX(t.reg_date)) * 2) * INTERVAL '1 day')::date
+                    END
+                WHEN MAX(t.withdrawal_until_milk) IS NOT NULL THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                ELSE NULL
+            END
+        ELSE MAX(t.withdrawal_until_milk)
+    END AS milk_until,
+    CASE 
+        WHEN f.is_eco_farm THEN
+            CASE 
+                WHEN MAX(t.withdrawal_until_meat) IS NOT NULL AND MAX(t.withdrawal_until_meat) >= CURRENT_DATE THEN
+                    CASE 
+                        WHEN (MAX(t.withdrawal_until_meat) - CURRENT_DATE) = 0 
+                        THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                        ELSE (MAX(t.reg_date) + ((MAX(t.withdrawal_until_meat) - MAX(t.reg_date)) * 2) * INTERVAL '1 day')::date
+                    END
+                WHEN MAX(t.withdrawal_until_meat) IS NOT NULL THEN (CURRENT_DATE + INTERVAL '2 days')::date
+                ELSE NULL
+            END
+        ELSE MAX(t.withdrawal_until_meat)
+    END AS meat_until,
+    -- Active flags (based on adjusted dates for eco-farms)
+    CASE
+        WHEN f.is_eco_farm AND MAX(t.withdrawal_until_milk) IS NOT NULL THEN true
+        WHEN NOT f.is_eco_farm AND MAX(t.withdrawal_until_milk) >= CURRENT_DATE THEN true
+        ELSE false
+    END AS milk_active,
+    CASE
+        WHEN f.is_eco_farm AND MAX(t.withdrawal_until_meat) IS NOT NULL THEN true
+        WHEN NOT f.is_eco_farm AND MAX(t.withdrawal_until_meat) >= CURRENT_DATE THEN true
+        ELSE false
+    END AS meat_active
+FROM public.treatments t
+LEFT JOIN public.animals a ON a.id = t.animal_id
+JOIN public.farms f ON t.farm_id = f.id
+WHERE t.animal_id IS NOT NULL
+GROUP BY t.farm_id, t.animal_id, a.tag_no, f.is_eco_farm;
+
+COMMENT ON VIEW public.vw_withdrawal_status IS 'Current withdrawal status for all animals with eco-farm adjusted dates';

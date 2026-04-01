@@ -289,57 +289,59 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
     return animal.age_months ? `${animal.age_months} mėn.` : '-';
   };
 
+  // Helper function to return stock to farm batches when deleting usage_items
+  const returnStockToFarmBatches = async (treatmentId: string): Promise<number> => {
+    const { data: usageItems, error: usageError } = await supabase
+      .from('usage_items')
+      .select('id, batch_id, qty')
+      .eq('treatment_id', treatmentId);
+
+    if (usageError) throw usageError;
+
+    let returnedCount = 0;
+    if (usageItems && usageItems.length > 0) {
+      for (const item of usageItems) {
+        const { data: batch, error: batchError } = await supabase
+          .from('batches')
+          .select('qty_left, status')
+          .eq('id', item.batch_id)
+          .single();
+
+        if (batchError) {
+          console.error('Error fetching batch:', batchError);
+          continue;
+        }
+
+        const newQtyLeft = (batch.qty_left || 0) + item.qty;
+        const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
+
+        await supabase
+          .from('batches')
+          .update({ 
+            qty_left: newQtyLeft,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.batch_id);
+
+        returnedCount++;
+      }
+    }
+    return returnedCount;
+  };
+
   const handleDeleteTreatment = async (treatmentId: string) => {
-    if (!confirm(`Ar tikrai norite ištrinti šį gydymą gyvūnui ${animal.tag_no}?\n\nŠis veiksmas:\n• Ištrina gydymo įrašą\n• Grąžina panaudotus vaistus į atsargas\n• Pašalina karencijos laikotarpius\n• Negali būti atšauktas`)) {
+    if (!confirm(`Ar tikrai norite ištrinti šį gydymą gyvūnui ${animal.tag_no}?\n\nŠis veiksmas:\n• Ištrina gydymo įrašą\n• Grąžina panaudotus vaistus į ūkio atsargas\n• Pašalina karencijos laikotarpius\n• Negali būti atšauktas`)) {
       return;
     }
 
     setDeletingTreatmentId(treatmentId);
 
     try {
-      // Step 1: Get all usage_items for this treatment to revert stock
-      const { data: usageItems, error: usageError } = await supabase
-        .from('usage_items')
-        .select('id, batch_id, qty')
-        .eq('treatment_id', treatmentId);
+      // Step 1: Return stock to farm batches
+      const returnedCount = await returnStockToFarmBatches(treatmentId);
 
-      if (usageError) throw usageError;
-
-      // Step 2: Revert stock for each usage item
-      if (usageItems && usageItems.length > 0) {
-        for (const item of usageItems) {
-          // Get current batch qty_left
-          const { data: batch, error: batchError } = await supabase
-            .from('batches')
-            .select('qty_left, status')
-            .eq('id', item.batch_id)
-            .single();
-
-          if (batchError) {
-            console.error('Error fetching batch:', batchError);
-            continue;
-          }
-
-          // Add quantity back to batch
-          const newQtyLeft = (batch.qty_left || 0) + item.qty;
-          const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
-
-          const { error: updateError } = await supabase
-            .from('batches')
-            .update({ 
-              qty_left: newQtyLeft,
-              status: newStatus,
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', item.batch_id);
-
-          if (updateError) {
-            console.error('Error updating batch:', updateError);
-          }
-        }
-      }
-
-      // Step 3: Delete treatment_courses (will cascade to course_doses)
+      // Step 2: Delete treatment_courses (will cascade to course_doses)
       const { error: coursesError } = await supabase
         .from('treatment_courses')
         .delete()
@@ -349,7 +351,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
         console.error('Error deleting courses:', coursesError);
       }
 
-      // Step 4: Delete usage_items
+      // Step 3: Delete usage_items
       const { error: deleteUsageError } = await supabase
         .from('usage_items')
         .delete()
@@ -357,7 +359,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
 
       if (deleteUsageError) throw deleteUsageError;
 
-      // Step 5: Delete the treatment itself
+      // Step 4: Delete the treatment itself
       const { error: deleteTreatmentError } = await supabase
         .from('treatments')
         .delete()
@@ -367,7 +369,7 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
 
       // Show success message
       showNotification(
-        `Gydymas ištrintas! Grąžinta produktų į atsargas: ${usageItems?.length || 0}`,
+        `Gydymas ištrintas! Grąžinta produktų į ūkio atsargas: ${returnedCount}`,
         'success'
       );
 
@@ -2432,8 +2434,18 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
 
         // Delete existing treatment/vaccination/prevention records if procedures changed
         if (visitToEdit.procedures.includes('Gydymas') && !formData.procedures.includes('Gydymas')) {
-          await supabase.from('treatment_medications').delete().eq('treatment_id', (await supabase.from('treatments').select('id').eq('visit_id', visitToEdit.id).maybeSingle()).data?.id);
-          await supabase.from('treatments').delete().eq('visit_id', visitToEdit.id);
+          const { data: treatmentToDelete } = await supabase
+            .from('treatments')
+            .select('id')
+            .eq('visit_id', visitToEdit.id)
+            .maybeSingle();
+          
+          if (treatmentToDelete?.id) {
+            await returnStockToFarmBatches(treatmentToDelete.id);
+            await supabase.from('usage_items').delete().eq('treatment_id', treatmentToDelete.id);
+            await supabase.from('treatment_medications').delete().eq('treatment_id', treatmentToDelete.id);
+            await supabase.from('treatments').delete().eq('id', treatmentToDelete.id);
+          }
         }
         if (visitToEdit.procedures.includes('Vakcina') && !formData.procedures.includes('Vakcina')) {
           await supabase.from('vaccinations').delete().eq('visit_id', visitToEdit.id);
@@ -2570,6 +2582,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
 
             // Delete existing medications and courses to replace with new ones
             console.log('🗑️ Deleting old medications/courses for treatment:', existingTreatment.id);
+            await returnStockToFarmBatches(existingTreatment.id);
             await supabase.from('usage_items').delete().eq('treatment_id', existingTreatment.id);
             await supabase.from('treatment_courses').delete().eq('treatment_id', existingTreatment.id);
             await supabase.from('treatment_medications').delete().eq('treatment_id', existingTreatment.id);

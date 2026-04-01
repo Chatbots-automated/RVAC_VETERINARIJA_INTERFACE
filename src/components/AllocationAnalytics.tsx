@@ -12,6 +12,8 @@ interface FarmAnalytics {
   unique_products: number;
   total_qty_allocated: number;
   total_value_allocated: number;
+  /** Pre-discount value (sąskaitos logika) — may be null until migration applied */
+  total_value_allocated_before_discount?: number | null;
   last_allocation_date: string | null;
 }
 
@@ -80,7 +82,10 @@ export function AllocationAnalytics() {
         'Paskirstymų skaičius': farm.total_allocations,
         'Unikalių produktų': farm.unique_products,
         'Bendras kiekis': farm.total_qty_allocated,
-        'Bendra vertė (EUR)': farm.total_value_allocated?.toFixed(2) || '0.00',
+        'Bendra vertė be nuol. (EUR)': farm.total_value_allocated_before_discount != null
+          ? Number(farm.total_value_allocated_before_discount).toFixed(2)
+          : '-',
+        'Bendra vertė su nuol. (EUR)': farm.total_value_allocated?.toFixed(2) || '0.00',
         'Paskutinis paskirstymas': farm.last_allocation_date ? new Date(farm.last_allocation_date).toLocaleDateString('lt-LT') : '-',
       }));
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -219,7 +224,10 @@ export function AllocationAnalytics() {
                     Produktų
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Bendra vertė
+                    Vertė be nuol.
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Vertė su nuol.
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Paskutinis paskirstymas
@@ -251,8 +259,17 @@ export function AllocationAnalytics() {
                       <span className="font-medium text-gray-900">{farm.unique_products || 0}</span>
                     </td>
                     <td className="px-6 py-4">
+                      <span className="font-medium text-slate-700">
+                        {farm.total_value_allocated_before_discount != null
+                          ? `€${Number(farm.total_value_allocated_before_discount).toFixed(2)}`
+                          : '—'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <span className="font-medium text-green-600">
-                        {farm.total_value_allocated ? `€${farm.total_value_allocated.toFixed(2)}` : '€0.00'}
+                        {farm.total_value_allocated != null
+                          ? `€${Number(farm.total_value_allocated).toFixed(2)}`
+                          : '€0.00'}
                       </span>
                     </td>
                     <td className="px-6 py-4">

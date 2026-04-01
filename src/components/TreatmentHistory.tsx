@@ -92,7 +92,7 @@ export function TreatmentHistory() {
   };
 
   const handleDeleteTreatment = async (treatmentId: string, animalTag: string) => {
-    if (!confirm(`Ar tikrai norite ištrinti šį gydymą gyvūnui ${animalTag}?\n\nŠis veiksmas:\n• Ištrina gydymo įrašą\n• Grąžina panaudotus vaistus į atsargas\n• Pašalina karencijos laikotarpius\n• Negali būti atšauktas`)) {
+    if (!confirm(`Ar tikrai norite ištrinti šį gydymą gyvūnui ${animalTag}?\n\nŠis veiksmas:\n• Ištrina gydymo įrašą\n• Grąžina panaudotus vaistus į ūkio atsargas\n• Pašalina karencijos laikotarpius\n• Negali būti atšauktas`)) {
       return;
     }
 
@@ -168,7 +168,7 @@ export function TreatmentHistory() {
       if (deleteTreatmentError) throw deleteTreatmentError;
 
       // Show success message
-      alert(`Gydymas sėkmingai ištrintas!\n\nGrąžinta produktų į atsargas: ${usageItems?.length || 0}`);
+      alert(`Gydymas sėkmingai ištrintas!\n\nGrąžinta produktų į ūkio atsargas: ${usageItems?.length || 0}`);
 
       // Reload treatments
       await loadTreatments();
