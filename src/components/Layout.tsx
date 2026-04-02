@@ -23,7 +23,8 @@ import {
   Euro,
   Heart,
   StickyNote,
-  ChevronDown
+  ChevronDown,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useFarm } from '../contexts/FarmContext';
@@ -56,6 +57,7 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
   const [notepadOpen, setNotepadOpen] = useState(false);
   const [farmSwitchModalOpen, setFarmSwitchModalOpen] = useState(false);
   const [farmToConfirm, setFarmToConfirm] = useState<typeof farms[0] | null>(null);
+  const [farmSearchQuery, setFarmSearchQuery] = useState('');
   const { user, hasPermission, signOut, isFrozen, logAction } = useAuth();
   const { selectedFarm, setSelectedFarm, farms } = useFarm();
 
@@ -75,7 +77,17 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
   const cancelFarmSwitch = () => {
     setFarmToConfirm(null);
     setFarmSwitchModalOpen(false);
+    setFarmSearchQuery('');
   };
+
+  const filteredFarms = farms.filter(farm => {
+    const query = farmSearchQuery.toLowerCase();
+    return (
+      farm.name?.toLowerCase().includes(query) ||
+      farm.code?.toLowerCase().includes(query) ||
+      farm.address?.toLowerCase().includes(query)
+    );
+  });
 
   const handleSignOut = async () => {
     try {
@@ -299,35 +311,56 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
                 </div>
               </div>
             ) : (
-              <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-thin pr-2">
-                {farms.map(farm => (
-                  <button
-                    key={farm.id}
-                    onClick={() => handleFarmSwitch(farm)}
-                    disabled={farm.id === selectedFarm?.id}
-                    className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left group ${
-                      farm.id === selectedFarm?.id
-                        ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default'
-                        : 'bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-gray-900'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${farm.id === selectedFarm?.id ? 'bg-gray-200' : 'bg-blue-100 group-hover:bg-blue-200'}`}>
-                        <Building2 className={`w-5 h-5 ${farm.id === selectedFarm?.id ? 'text-gray-400' : 'text-blue-600'}`} />
-                      </div>
-                      <div>
-                        <p className="font-bold text-base">{farm.name}</p>
-                        <p className="text-xs text-gray-500 font-medium">{farm.code}</p>
-                      </div>
+              <>
+                <div className="mb-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Ieškoti ūkio..."
+                      value={farmSearchQuery}
+                      onChange={(e) => setFarmSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3 max-h-60 overflow-y-auto scrollbar-thin pr-2">
+                  {filteredFarms.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 text-sm">
+                      Nerasta ūkių pagal paieškos kriterijus
                     </div>
-                    {farm.id === selectedFarm?.id ? (
-                      <span className="text-xs font-bold text-gray-500 px-3 py-1 bg-gray-200 rounded-full">Dabartinis</span>
-                    ) : (
-                      <span className="text-sm font-bold text-blue-600 group-hover:translate-x-1 transition-transform">Perjungti →</span>
-                    )}
-                  </button>
-                ))}
-              </div>
+                  ) : (
+                    filteredFarms.map(farm => (
+                      <button
+                        key={farm.id}
+                        onClick={() => handleFarmSwitch(farm)}
+                        disabled={farm.id === selectedFarm?.id}
+                        className={`w-full flex items-center justify-between p-4 rounded-lg border transition-colors text-left group ${
+                          farm.id === selectedFarm?.id
+                            ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-default'
+                            : 'bg-white border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-gray-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg ${farm.id === selectedFarm?.id ? 'bg-gray-200' : 'bg-blue-100 group-hover:bg-blue-200'}`}>
+                            <Building2 className={`w-5 h-5 ${farm.id === selectedFarm?.id ? 'text-gray-400' : 'text-blue-600'}`} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-base">{farm.name}</p>
+                            <p className="text-xs text-gray-500 font-medium">{farm.code}</p>
+                          </div>
+                        </div>
+                        {farm.id === selectedFarm?.id ? (
+                          <span className="text-xs font-bold text-gray-500 px-3 py-1 bg-gray-200 rounded-full">Dabartinis</span>
+                        ) : (
+                          <span className="text-sm font-bold text-blue-600 group-hover:translate-x-1 transition-transform">Perjungti →</span>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </>
             )}
 
             <button

@@ -3,13 +3,15 @@ import { supabase } from '../lib/supabase';
 import { Product, Supplier } from '../lib/types';
 import { normalizeNumberInput } from '../lib/helpers';
 import { useAuth } from '../contexts/AuthContext';
+import { useFarm } from '../contexts/FarmContext';
 import { useRealtimeSubscription } from '../hooks/useRealtimeSubscription';
-import { Plus, Check, Upload, FileText, X, AlertCircle, CheckCircle, PlusCircle, CreditCard as Edit2, Save, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Package } from 'lucide-react';
+import { Plus, Check, Upload, FileText, X, AlertCircle, CheckCircle, PlusCircle, CreditCard as Edit2, Save, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Package, Building2 } from 'lucide-react';
 import { formatDateLT } from '../lib/formatters';
 import { getSubcategories, getNestedSubcategories, hasSubcategories, hasNestedSubcategories } from '../lib/categoryHierarchy';
 
 export function WarehouseStock() {
   const { logAction, user } = useAuth();
+  const { farms } = useFarm();
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +57,7 @@ export function WarehouseStock() {
     lot: '',
   });
   const [bulkReceiving, setBulkReceiving] = useState(false);
+  const [assignToFarmId, setAssignToFarmId] = useState<string | null>(null);
   const [editingHeader, setEditingHeader] = useState(false);
   const [headerData, setHeaderData] = useState<any>(null);
   const [pdfUrls, setPdfUrls] = useState<string[]>([]);
@@ -611,7 +614,7 @@ export function WarehouseStock() {
       const { data: invoice, error: invoiceError } = await supabase
         .from('invoices')
         .insert({
-          farm_id: null,
+          farm_id: assignToFarmId, // null for warehouse, or specific farm_id
           invoice_number: invoiceData.invoice.number,
           invoice_date: invoiceData.invoice.date || new Date().toISOString().split('T')[0],
           doc_title: 'Invoice',
@@ -694,26 +697,61 @@ export function WarehouseStock() {
         });
       }
 
-      const { data: batches, error: batchesError } = await supabase
-        .from('warehouse_batches')
-        .insert(stockEntries)
-        .select();
+      // If assigning to a farm, create farm batches; otherwise create warehouse batches
+      if (assignToFarmId) {
+        // Create farm-level batches
+        const farmBatchEntries = stockEntries.map(entry => ({
+          ...entry,
+          farm_id: assignToFarmId,
+          qty_left: entry.received_qty,
+          status: 'active',
+        }));
 
-      if (batchesError) throw batchesError;
+        const { data: farmBatches, error: farmBatchesError } = await supabase
+          .from('batches')
+          .insert(farmBatchEntries)
+          .select();
 
-      // Link warehouse batches to invoice items
-      const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
-        ...item,
-        warehouse_batch_id: batches[index]?.id || null,
-      }));
+        if (farmBatchesError) throw farmBatchesError;
 
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(invoiceItemsWithBatches);
+        // Link farm batches to invoice items
+        const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
+          ...item,
+          farm_id: assignToFarmId,
+          batch_id: farmBatches[index]?.id || null,
+        }));
 
-      if (itemsError) throw itemsError;
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(invoiceItemsWithBatches);
 
-      alert(`Sėkmingai priimta ${stockEntries.length} produktų!`);
+        if (itemsError) throw itemsError;
+      } else {
+        // Create warehouse batches
+        const { data: batches, error: batchesError } = await supabase
+          .from('warehouse_batches')
+          .insert(stockEntries)
+          .select();
+
+        if (batchesError) throw batchesError;
+
+        // Link warehouse batches to invoice items
+        const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
+          ...item,
+          warehouse_batch_id: batches[index]?.id || null,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(invoiceItemsWithBatches);
+
+        if (itemsError) throw itemsError;
+      }
+
+      const farmName = assignToFarmId 
+        ? farms.find(f => f.id === assignToFarmId)?.name 
+        : 'Bendras sandėlis';
+      alert(`Sėkmingai priimta ${stockEntries.length} produktų!\n\nPriskirta: ${farmName}`);
       
       // Remove current invoice from the list
       const updatedInvoices = invoicesData.filter((_, idx) => idx !== currentInvoiceIndex);
@@ -745,6 +783,7 @@ export function WarehouseStock() {
       setBulkReceiveData({
         lot: '',
       });
+      setAssignToFarmId(null);
 
       await loadData();
       await loadWarehouseInvoices();
@@ -1574,6 +1613,39 @@ export function WarehouseStock() {
               <p className="text-xs text-gray-600 mb-4">
                 💡 <strong>Patarimas:</strong> Jei kiekviena prekė turi savo seriją ir galiojimo datą (automatiškai ištraukta iš PDF), galite priimti be šių laukų pildymo. Arba užpildinkit šiuos laukus, jei norite naudoti tą pačią datą visoms prekėms.
               </p>
+              
+              <div className="mb-4 p-4 bg-white border-2 border-blue-400 rounded-lg">
+                <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-blue-600" />
+                  Paskirti sąskaitą
+                </label>
+                <p className="text-xs text-gray-600 mb-3">
+                  Pasirinkite, ar sąskaita ir atsargos bus priskirtos konkrečiam ūkiui, ar bendram sandėliui.
+                </p>
+                <select
+                  value={assignToFarmId || ''}
+                  onChange={(e) => setAssignToFarmId(e.target.value || null)}
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium"
+                >
+                  <option value="">🏢 Bendras sandėlis (Vetpraktika)</option>
+                  {farms.filter(f => f.is_active).map(farm => (
+                    <option key={farm.id} value={farm.id}>
+                      🏠 {farm.name} ({farm.code})
+                    </option>
+                  ))}
+                </select>
+                {assignToFarmId && (
+                  <div className="mt-2 p-2 bg-green-50 border border-green-300 rounded text-xs text-green-800">
+                    ✓ Sąskaita ir atsargos bus priskirtos pasirinktam ūkiui ir bus matomos jų ataskaitose.
+                  </div>
+                )}
+                {!assignToFarmId && (
+                  <div className="mt-2 p-2 bg-blue-50 border border-blue-300 rounded text-xs text-blue-800">
+                    ℹ️ Sąskaita ir atsargos bus bendrame sandėlyje. Galėsite paskirstyti produktus ūkiams per "Paskirstymas" skiltį.
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">

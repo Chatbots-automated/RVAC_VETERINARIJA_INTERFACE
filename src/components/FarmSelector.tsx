@@ -1,4 +1,5 @@
-import { Building2, MapPin, Phone, Mail, ArrowRight, Hash, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Building2, MapPin, Phone, Mail, ArrowRight, Hash, ArrowLeft, Search } from 'lucide-react';
 import { useFarm } from '../contexts/FarmContext';
 
 interface FarmSelectorProps {
@@ -8,6 +9,7 @@ interface FarmSelectorProps {
 
 export function FarmSelector({ onFarmSelected, onBack }: FarmSelectorProps) {
   const { farms, selectedFarm, setSelectedFarm, loading } = useFarm();
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleSelectFarm = (farm: any) => {
     setSelectedFarm(farm);
@@ -26,6 +28,16 @@ export function FarmSelector({ onFarmSelected, onBack }: FarmSelectorProps) {
   }
 
   const activeFarms = farms.filter(f => f.is_active);
+
+  const filteredFarms = activeFarms.filter(farm => {
+    const query = searchQuery.toLowerCase();
+    return (
+      farm.name?.toLowerCase().includes(query) ||
+      farm.code?.toLowerCase().includes(query) ||
+      farm.address?.toLowerCase().includes(query) ||
+      farm.contact_person?.toLowerCase().includes(query)
+    );
+  });
 
   if (activeFarms.length === 0) {
     return (
@@ -54,7 +66,7 @@ export function FarmSelector({ onFarmSelected, onBack }: FarmSelectorProps) {
           </button>
         </div>
 
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-3">
             Pasirinkite Ūkį
           </h1>
@@ -63,8 +75,26 @@ export function FarmSelector({ onFarmSelected, onBack }: FarmSelectorProps) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {activeFarms.map((farm) => (
+        <div className="max-w-2xl mx-auto mb-8">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Ieškoti ūkio pagal pavadinimą, kodą, adresą..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+            />
+          </div>
+        </div>
+
+        {filteredFarms.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">Nerasta ūkių pagal paieškos kriterijus</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredFarms.map((farm) => (
             <button
               key={farm.id}
               onClick={() => handleSelectFarm(farm)}
@@ -132,8 +162,9 @@ export function FarmSelector({ onFarmSelected, onBack }: FarmSelectorProps) {
                 </div>
               </div>
             </button>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {selectedFarm && (
           <div className="mt-8 text-center">

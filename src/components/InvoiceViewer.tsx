@@ -233,45 +233,85 @@ export function InvoiceViewer({ showAllInvoices = false }: InvoiceViewerProps) {
                     <Package className="w-4 h-4" />
                     Produktai ({invoiceItems.length})
                   </h4>
-                  <div className="space-y-2">
-                    {invoiceItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="bg-white p-3 rounded-lg border border-gray-200"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-medium text-gray-500">#{item.line_no}</span>
-                              <span className="font-semibold text-gray-900">
-                                {item.product?.name || item.description}
-                              </span>
-                              {item.product && (
-                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                  {getCategoryLabel(item.product.category)}
+                  
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-gray-100 border-b-2 border-gray-300">
+                        <tr>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Produkto pavadinimas</th>
+                          <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">Kiekis</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Vieneto kaina</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Suma</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {invoiceItems.map((item) => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-3 py-2 text-gray-500 font-medium">
+                              {item.line_no}
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex flex-col">
+                                <span className="font-semibold text-gray-900">
+                                  {item.product?.name || item.description}
                                 </span>
-                              )}
-                            </div>
-                            {item.sku && (
-                              <div className="text-xs text-gray-500">SKU: {item.sku}</div>
-                            )}
-                            {item.discount_percent != null && (
-                              <div className="text-xs text-amber-700 font-medium mt-0.5">
-                                Nuolaida: {Number(item.discount_percent).toFixed(2)}%
+                                <div className="flex items-center gap-2 mt-1">
+                                  {item.product && (
+                                    <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                      {getCategoryLabel(item.product.category)}
+                                    </span>
+                                  )}
+                                  {item.sku && (
+                                    <span className="text-xs text-gray-500">SKU: {item.sku}</span>
+                                  )}
+                                  {item.discount_percent != null && item.discount_percent > 0 && (
+                                    <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
+                                      -{Number(item.discount_percent).toFixed(0)}% nuolaida
+                                    </span>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-gray-600 mb-1">
-                              {item.quantity} × {invoice.currency} {item.unit_price.toFixed(2)}
-                            </div>
-                            <div className="font-bold text-blue-700">
+                            </td>
+                            <td className="px-3 py-2 text-center font-medium text-gray-900">
+                              {item.quantity}
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-gray-700">
+                              {invoice.currency} {item.unit_price.toFixed(2)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-bold text-blue-700">
                               {invoice.currency} {item.total_price.toFixed(2)}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-100 border-t-2 border-gray-300">
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right font-bold text-gray-900">
+                            Iš viso:
+                          </td>
+                          <td className="px-3 py-2 text-right font-bold text-blue-700 text-lg">
+                            {invoice.currency} {invoice.total_gross.toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right text-sm text-gray-600">
+                            Grynoji suma:
+                          </td>
+                          <td className="px-3 py-2 text-right text-sm text-gray-700">
+                            {invoice.currency} {invoice.total_net.toFixed(2)}
+                          </td>
+                        </tr>
+                        <tr>
+                          <td colSpan={4} className="px-3 py-2 text-right text-sm text-gray-600">
+                            PVM ({invoice.vat_rate}%):
+                          </td>
+                          <td className="px-3 py-2 text-right text-sm text-gray-700">
+                            {invoice.currency} {invoice.total_vat.toFixed(2)}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
                   </div>
                 </div>
               )}

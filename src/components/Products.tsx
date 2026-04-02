@@ -52,7 +52,7 @@ export function Products() {
   useRealtimeSubscription({
     table: 'products',
     filter: selectedFarm ? `farm_id=eq.${selectedFarm.id}` : undefined,
-    enabled: !!selectedFarm,
+    enabled: true,
     onInsert: useCallback((payload) => {
       setProducts(prev => sortByLithuanian([...prev, payload.new], 'name'));
     }, []),
@@ -66,16 +66,15 @@ export function Products() {
 
   const loadProducts = async () => {
     try {
-      if (!selectedFarm) {
-        setProducts([]);
-        setLoading(false);
-        return;
+      let query = supabase.from('products').select('*, farm:farms(name, code)');
+      
+      // If selectedFarm exists, filter by farm (Veterinary module)
+      // If no selectedFarm, load all products (Vetpraktika module)
+      if (selectedFarm) {
+        query = query.eq('farm_id', selectedFarm.id);
       }
 
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('farm_id', selectedFarm.id);
+      const { data, error } = await query;
 
       if (error) throw error;
       // Sort by Lithuanian alphabet
@@ -587,7 +586,7 @@ export function Products() {
           <Pill className="w-5 h-5 text-blue-600" />
           <h2 className="text-lg font-bold text-gray-900">Produktai</h2>
         </div>
-        {!showAdd && !editing && (
+        {!showAdd && !editing && selectedFarm && (
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
@@ -595,6 +594,11 @@ export function Products() {
             <Plus className="w-4 h-4" />
             Naujas
           </button>
+        )}
+        {!selectedFarm && (
+          <div className="text-xs text-gray-500 italic">
+            Peržiūros režimas - redagavimas galimas tik ūkio modulyje
+          </div>
         )}
       </div>
 
@@ -610,6 +614,7 @@ export function Products() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Pavadinimas</th>
+              {!selectedFarm && <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Ūkis</th>}
               <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Kategorija</th>
               <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Pakuotė</th>
               <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">V. medžiaga</th>
@@ -621,13 +626,20 @@ export function Products() {
             {products.map((product) => (
               editing === product.id ? (
                 <tr key={product.id} className="bg-amber-50">
-                  <td colSpan={6} className="px-3 py-3">
+                  <td colSpan={!selectedFarm ? 7 : 6} className="px-3 py-3">
                     {formFields}
                   </td>
                 </tr>
               ) : (
                 <tr key={product.id} className="hover:bg-gray-50">
                   <td className="px-3 py-2 font-medium text-gray-900">{product.name}</td>
+                  {!selectedFarm && (
+                    <td className="px-3 py-2 text-gray-600">
+                      <span className="text-xs font-medium text-blue-600">
+                        {(product as any).farm?.code || '-'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-3 py-2 text-gray-600">
                     {product.category === 'medicines' && 'Vaistai'}
                     {product.category === 'prevention' && 'Prevencija'}
@@ -667,13 +679,17 @@ export function Products() {
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      className="text-blue-600 hover:text-blue-800 p-1"
-                      title="Redaguoti"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
+                    {selectedFarm ? (
+                      <button
+                        onClick={() => handleEdit(product)}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                        title="Redaguoti"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
                   </td>
                 </tr>
               )
