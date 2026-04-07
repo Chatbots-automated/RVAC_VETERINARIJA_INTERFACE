@@ -294,33 +294,6 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
     setProducts(sortedData);
   };
 
-  const handleApsekStatusChange = () => {
-    showNotification(
-      'Sinchronizacijos protokolai automatiškai atšaukti dėl APSĖK statuso',
-      'warning'
-    );
-    loadVisits();
-  };
-
-  // Calculate age in months from birth date
-  const calculateAgeMonths = (birthDate: string | null): number | null => {
-    if (!birthDate) return null;
-    const birth = new Date(birthDate);
-    const today = new Date();
-    const months = (today.getFullYear() - birth.getFullYear()) * 12 + 
-                   (today.getMonth() - birth.getMonth());
-    return Math.max(0, months);
-  };
-
-  // Get display age - prioritize calculated from birth_date, fallback to stored age_months
-  const getDisplayAge = (): string => {
-    if (animal.birth_date) {
-      const calculatedAge = calculateAgeMonths(animal.birth_date);
-      return calculatedAge !== null ? `${calculatedAge} mėn.` : '-';
-    }
-    return animal.age_months ? `${animal.age_months} mėn.` : '-';
-  };
-
   // Helper function to return stock to farm batches when deleting usage_items
   const returnStockToFarmBatches = async (treatmentId: string): Promise<number> => {
     const { data: usageItems, error: usageError } = await supabase
@@ -360,6 +333,33 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
       }
     }
     return returnedCount;
+  };
+
+  const handleApsekStatusChange = () => {
+    showNotification(
+      'Sinchronizacijos protokolai automatiškai atšaukti dėl APSĖK statuso',
+      'warning'
+    );
+    loadVisits();
+  };
+
+  // Calculate age in months from birth date
+  const calculateAgeMonths = (birthDate: string | null): number | null => {
+    if (!birthDate) return null;
+    const birth = new Date(birthDate);
+    const today = new Date();
+    const months = (today.getFullYear() - birth.getFullYear()) * 12 + 
+                   (today.getMonth() - birth.getMonth());
+    return Math.max(0, months);
+  };
+
+  // Get display age - prioritize calculated from birth_date, fallback to stored age_months
+  const getDisplayAge = (): string => {
+    if (animal.birth_date) {
+      const calculatedAge = calculateAgeMonths(animal.birth_date);
+      return calculatedAge !== null ? `${calculatedAge} mėn.` : '-';
+    }
+    return animal.age_months ? `${animal.age_months} mėn.` : '-';
   };
 
   const handleDeleteTreatment = async (treatmentId: string) => {
