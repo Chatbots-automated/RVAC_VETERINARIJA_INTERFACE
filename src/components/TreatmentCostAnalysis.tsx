@@ -531,7 +531,7 @@ export function TreatmentCostAnalysis() {
               totalProductsCost += itemCost;
 
               // Check if it's a vaccine based on category or subcategory
-              const isVaccine = (usage.products as any)?.category === 'prevention' ||
+              const isVaccine = ['prevention', 'ovules', 'vakcina'].includes((usage.products as any)?.category) ||
                                (usage.products as any)?.subcategory === 'Vakcinos' ||
                                (usage.products as any)?.name?.toLowerCase().includes('vakcin');
 
@@ -616,7 +616,7 @@ export function TreatmentCostAnalysis() {
                 totalProductsCost += itemCost;
 
                 // Check if it's a vaccine based on category or subcategory
-                const isVaccine = product?.category === 'prevention' ||
+                const isVaccine = ['prevention', 'ovules', 'vakcina'].includes(product?.category) ||
                                  product?.subcategory === 'Vakcinos' ||
                                  product?.name?.toLowerCase().includes('vakcin');
 

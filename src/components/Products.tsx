@@ -133,8 +133,8 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
         primary_pack_size: formData.primary_pack_size ? parseFloat(formData.primary_pack_size) : null,
         package_weight_g: formData.package_weight_g ? parseFloat(formData.package_weight_g) : null,
         active_substance: formData.active_substance || null,
-        withdrawal_days_meat: (['medicines', 'svirkstukai'].includes(formData.category) && formData.withdrawal_days_meat) ? parseInt(formData.withdrawal_days_meat) : null,
-        withdrawal_days_milk: (['medicines', 'svirkstukai'].includes(formData.category) && formData.withdrawal_days_milk) ? parseInt(formData.withdrawal_days_milk) : null,
+        withdrawal_days_meat: (['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(formData.category) && formData.withdrawal_days_meat) ? parseInt(formData.withdrawal_days_meat) : null,
+        withdrawal_days_milk: (['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(formData.category) && formData.withdrawal_days_milk) ? parseInt(formData.withdrawal_days_milk) : null,
         withdrawal_iv_meat: formData.withdrawal_iv_meat ? parseInt(formData.withdrawal_iv_meat) : null,
         withdrawal_iv_milk: formData.withdrawal_iv_milk ? parseInt(formData.withdrawal_iv_milk) : null,
         withdrawal_im_meat: formData.withdrawal_im_meat ? parseInt(formData.withdrawal_im_meat) : null,
@@ -268,6 +268,7 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
           >
             <option value="medicines">Vaistai</option>
             <option value="prevention">Prevencija</option>
+            <option value="ovules">Ovulės</option>
             <option value="vakcina">Vakcina</option>
             <option value="bolusas">Bolusas</option>
             <option value="svirkstukai">Švirkštukai</option>
@@ -388,7 +389,7 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
           />
         </div>
 
-        {(formData.category === 'medicines' || formData.category === 'svirkstukai') && (
+        {(['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(formData.category)) && (
           <>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -664,6 +665,7 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
                   <td className="px-3 py-2 text-gray-600">
                     {product.category === 'medicines' && 'Vaistai'}
                     {product.category === 'prevention' && 'Prevencija'}
+                    {product.category === 'ovules' && 'Ovulės'}
                     {product.category === 'vakcina' && 'Vakcina'}
                     {product.category === 'bolusas' && 'Bolusas'}
                     {product.category === 'svirkstukai' && 'Švirkštukai'}
@@ -678,7 +680,7 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
                   </td>
                   <td className="px-3 py-2 text-gray-600 text-xs">{product.active_substance || '-'}</td>
                   <td className="px-3 py-2">
-                    {(product.category === 'medicines' || product.category === 'svirkstukai') ? (
+                    {(['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(product.category)) ? (
                       <div className="flex gap-1 text-xs">
                         {product.withdrawal_days_meat !== null && product.withdrawal_days_meat !== undefined && (
                           <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded font-medium">

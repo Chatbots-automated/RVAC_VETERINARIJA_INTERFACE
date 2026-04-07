@@ -1,4 +1,4 @@
-export type ProductCategory = 'medicines' | 'prevention' | 'vakcina' | 'reproduction' | 'treatment_materials' | 'hygiene' | 'biocide' | 'technical' | 'svirkstukai' | 'bolusas';
+export type ProductCategory = 'medicines' | 'prevention' | 'ovules' | 'vakcina' | 'reproduction' | 'treatment_materials' | 'hygiene' | 'biocide' | 'technical' | 'svirkstukai' | 'bolusas';
 export type Unit = 'ml' | 'l' | 'g' | 'kg' | 'vnt' | 'pcs' | 'tabletkė' | 'bolus' | 'syringe';
 export type AdministrationRoute = 'iv' | 'im' | 'sc' | 'iu' | 'imm' | 'pos';
 

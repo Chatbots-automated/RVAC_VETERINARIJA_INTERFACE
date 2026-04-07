@@ -40,7 +40,7 @@ export function BulkTreatment() {
   // Group products by category for easier selection
   const getMedicineProducts = () => products.filter(p => p.category === 'medicines');
   const getVaccineProducts = () => products.filter(p => p.category === 'vakcina');
-  const getPreventionProducts = () => products.filter(p => p.category === 'prevention');
+  const getPreventionProducts = () => products.filter(p => p.category === 'prevention' || p.category === 'ovules');
 
   const { user, logAction } = useAuth();
   const { selectedFarm } = useFarm();
@@ -251,7 +251,7 @@ export function BulkTreatment() {
       // Group medications by category
       const treatments = validMedications.filter(m => m.category === 'medicines');
       const vaccinations = validMedications.filter(m => m.category === 'vakcina');
-      const preventions = validMedications.filter(m => m.category === 'prevention');
+      const preventions = validMedications.filter(m => m.category === 'prevention' || m.category === 'ovules');
 
       for (const animal of selectedAnimals) {
         // Handle treatments (medicines)
@@ -477,7 +477,7 @@ export function BulkTreatment() {
               const selectedProduct = products.find(p => p.id === med.product_id);
               const medicineProducts = products.filter(p => p.category === 'medicines');
               const vaccineProducts = products.filter(p => p.category === 'vakcina');
-              const preventionProducts = products.filter(p => p.category === 'prevention');
+              const preventionProducts = products.filter(p => p.category === 'prevention' || p.category === 'ovules');
 
               return (
               <div key={med.id} className="flex gap-3 items-start bg-gray-50 p-4 rounded-lg border-2 border-gray-200">
@@ -520,7 +520,7 @@ export function BulkTreatment() {
                       {med.category === 'vakcina' && vaccineProducts.map(product => (
                         <option key={product.id} value={product.id}>{product.name}</option>
                       ))}
-                      {med.category === 'prevention' && preventionProducts.map(product => (
+                      {(med.category === 'prevention' || med.category === 'ovules') && preventionProducts.map(product => (
                         <option key={product.id} value={product.id}>{product.name}</option>
                       ))}
                     </select>

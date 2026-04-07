@@ -606,7 +606,7 @@ export function TreatmentCompact() {
                     </div>
                   </div>
 
-                  {selectedProduct && selectedProduct.category === 'medicines' &&
+                  {selectedProduct && ['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(selectedProduct.category) &&
                    (selectedProduct.withdrawal_days_meat || selectedProduct.withdrawal_days_milk) && (
                     <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border-2 border-amber-300 rounded-lg">
                       <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0" />

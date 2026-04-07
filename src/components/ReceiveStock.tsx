@@ -428,8 +428,8 @@ export function ReceiveStock() {
         primary_pack_size: newProductForm.primary_pack_size ? parseFloat(newProductForm.primary_pack_size) : null,
         package_weight_g: newProductForm.package_weight_g ? parseFloat(newProductForm.package_weight_g) : null,
         active_substance: newProductForm.active_substance || null,
-        withdrawal_days_meat: (['medicines', 'svirkstukai'].includes(newProductForm.category) && newProductForm.withdrawal_days_meat) ? parseInt(newProductForm.withdrawal_days_meat) : null,
-        withdrawal_days_milk: (['medicines', 'svirkstukai'].includes(newProductForm.category) && newProductForm.withdrawal_days_milk) ? parseInt(newProductForm.withdrawal_days_milk) : null,
+        withdrawal_days_meat: (['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(newProductForm.category) && newProductForm.withdrawal_days_meat) ? parseInt(newProductForm.withdrawal_days_meat) : null,
+        withdrawal_days_milk: (['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(newProductForm.category) && newProductForm.withdrawal_days_milk) ? parseInt(newProductForm.withdrawal_days_milk) : null,
         withdrawal_iv_meat: newProductForm.withdrawal_iv_meat ? parseInt(newProductForm.withdrawal_iv_meat) : null,
         withdrawal_iv_milk: newProductForm.withdrawal_iv_milk ? parseInt(newProductForm.withdrawal_iv_milk) : null,
         withdrawal_im_meat: newProductForm.withdrawal_im_meat ? parseInt(newProductForm.withdrawal_im_meat) : null,
@@ -1660,6 +1660,7 @@ export function ReceiveStock() {
                     >
                       <option value="medicines">Vaistai</option>
                       <option value="prevention">Prevencija</option>
+                      <option value="ovules">Ovulės</option>
                       <option value="vakcina">Vakcina</option>
                       <option value="bolusas">Bolusas</option>
                       <option value="svirkstukai">Švirkštukai</option>
@@ -1780,7 +1781,7 @@ export function ReceiveStock() {
                     </p>
                   </div>
 
-                  {(newProductForm.category === 'medicines' || newProductForm.category === 'svirkstukai') && (
+                  {(['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(newProductForm.category)) && (
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2117,6 +2118,7 @@ export function ReceiveStock() {
                       >
                         <option value="medicines">Vaistai</option>
                         <option value="prevention">Prevencija</option>
+                        <option value="ovules">Ovulės</option>
                         <option value="vakcina">Vakcina</option>
                         <option value="bolusas">Bolusas</option>
                         <option value="svirkstukai">Švirkštukai</option>
@@ -2246,7 +2248,7 @@ export function ReceiveStock() {
                     </div>
 
                     {/* Route-specific withdrawal periods */}
-                    {(manualProductForm.category === 'medicines' || manualProductForm.category === 'svirkstukai') && (
+                    {(['medicines', 'svirkstukai', 'prevention', 'ovules'].includes(manualProductForm.category)) && (
                       <div className="md:col-span-2 bg-gray-50 border border-gray-300 rounded-lg p-4">
                         <h4 className="text-sm font-bold text-gray-900 mb-3">Karencijos pagal būdą (dienomis)</h4>
                         <div className="grid grid-cols-2 gap-3">

@@ -168,6 +168,7 @@ export function WarehouseInventory() {
           <option value="all">Visos kategorijos</option>
           <option value="medicines">Vaistai</option>
           <option value="prevention">Prevencija</option>
+          <option value="ovules">Ovulės</option>
           <option value="vakcina">Vakcina</option>
           <option value="bolusas">Bolusas</option>
           <option value="svirkstukai">Švirkštukai</option>
