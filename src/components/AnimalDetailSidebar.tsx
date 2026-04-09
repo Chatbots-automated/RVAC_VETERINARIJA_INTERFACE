@@ -1953,6 +1953,87 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     }
   }, [selectedFarm]);
 
+  // Helper function to return stock to farm batches when deleting usage_items
+  const returnStockToFarmBatches = async (treatmentId: string): Promise<number> => {
+    const { data: usageItems, error: usageError } = await supabase
+      .from('usage_items')
+      .select('id, batch_id, qty')
+      .eq('treatment_id', treatmentId);
+
+    if (usageError) throw usageError;
+
+    let returnedCount = 0;
+    if (usageItems && usageItems.length > 0) {
+      for (const item of usageItems) {
+        const { data: batch, error: batchError } = await supabase
+          .from('batches')
+          .select('qty_left, status')
+          .eq('id', item.batch_id)
+          .single();
+
+        if (batchError) {
+          console.error('Error fetching batch:', batchError);
+          continue;
+        }
+
+        const newQtyLeft = (batch.qty_left || 0) + item.qty;
+        const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
+
+        await supabase
+          .from('batches')
+          .update({ 
+            qty_left: newQtyLeft,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', item.batch_id);
+
+        returnedCount++;
+      }
+    }
+
+    // Also return stock from treatment_courses
+    const { data: courses, error: coursesError } = await supabase
+      .from('treatment_courses')
+      .select('id, batch_id, total_qty')
+      .eq('treatment_id', treatmentId);
+
+    if (coursesError) throw coursesError;
+
+    if (courses && courses.length > 0) {
+      for (const course of courses) {
+        if (!course.batch_id) continue;
+
+        const { data: batch, error: batchError } = await supabase
+          .from('batches')
+          .select('qty_left, status')
+          .eq('id', course.batch_id)
+          .single();
+
+        if (batchError) {
+          console.error('Error fetching batch:', batchError);
+          continue;
+        }
+
+        const newQtyLeft = (batch.qty_left || 0) + (course.total_qty || 0);
+        const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
+
+        await supabase
+          .from('batches')
+          .update({ 
+            qty_left: newQtyLeft,
+            status: newStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', course.batch_id);
+
+        returnedCount++;
+      }
+    }
+
+    return returnedCount;
+  };
+
   const loadExistingData = async () => {
     if (!visitToEdit) return;
 
