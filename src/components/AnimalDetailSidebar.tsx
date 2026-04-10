@@ -27,6 +27,8 @@ interface Vaccination {
   next_booster_date: string | null;
   administered_by: string | null;
   notes: string | null;
+  withdrawal_until_milk: string | null;
+  withdrawal_until_meat: string | null;
   created_at: string;
 }
 
@@ -1244,6 +1246,38 @@ export function AnimalDetailSidebar({ animal, onClose, defaultTab = 'overview' }
                         <span className="font-bold text-green-700">
                           {formatDateLT(vaccination.next_booster_date)}
                         </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {(vaccination.withdrawal_until_milk || vaccination.withdrawal_until_meat) && (
+                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-3 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="w-4 h-4 text-amber-600" />
+                        <span className="text-sm font-semibold text-gray-900">Karencijos laikotarpis</span>
+                      </div>
+                      <div className="space-y-1 text-sm">
+                        {vaccination.withdrawal_until_milk && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700 flex items-center gap-1">
+                              <Milk className="w-3.5 h-3.5" />
+                              Pienas:
+                            </span>
+                            <span className={`font-semibold ${new Date(vaccination.withdrawal_until_milk) >= new Date() ? 'text-amber-700' : 'text-gray-500'}`}>
+                              {formatDateLT(vaccination.withdrawal_until_milk)}
+                              {new Date(vaccination.withdrawal_until_milk) >= new Date() && ' ⚠️'}
+                            </span>
+                          </div>
+                        )}
+                        {vaccination.withdrawal_until_meat && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-gray-700">Mėsa:</span>
+                            <span className={`font-semibold ${new Date(vaccination.withdrawal_until_meat) >= new Date() ? 'text-amber-700' : 'text-gray-500'}`}>
+                              {formatDateLT(vaccination.withdrawal_until_meat)}
+                              {new Date(vaccination.withdrawal_until_meat) >= new Date() && ' ⚠️'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
