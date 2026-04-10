@@ -89,24 +89,39 @@ export function BulkTreatment() {
   const loadData = async () => {
     if (!selectedFarm) return;
 
-    const [animalsRes, productsRes, batchesRes, vetsRes] = await Promise.all([
+    const [animalsRes, batchesRes, vetsRes] = await Promise.all([
       supabase.from('animals').select('*').eq('farm_id', selectedFarm.id).order('tag_no'),
-      supabase.from('products').select('*').eq('farm_id', selectedFarm.id).eq('is_active', true).in('category', ['medicines', 'prevention', 'vakcina']),
       supabase.from('stock_by_batch').select('*').eq('farm_id', selectedFarm.id).gt('on_hand', 0),
       supabase.from('treatments').select('vet_name').eq('farm_id', selectedFarm.id).not('vet_name', 'is', null),
     ]);
 
     setAnimals(animalsRes.data || []);
-    if (productsRes.data) {
-      const sortedProducts = sortByLithuanian(productsRes.data, 'name');
-      setProducts(sortedProducts);
-    }
     if (batchesRes.data) setBatches(batchesRes.data);
 
     // Get unique vet names
     if (vetsRes.data) {
       const uniqueVets = Array.from(new Set(vetsRes.data.map(v => v.vet_name).filter(Boolean))) as string[];
       setVetNames(uniqueVets.sort());
+    }
+
+    // Load products that have stock at this farm (from batches)
+    // This ensures we show products from warehouse that are allocated to this farm
+    if (batchesRes.data && batchesRes.data.length > 0) {
+      const productIds = [...new Set(batchesRes.data.map((b: any) => b.product_id))];
+      
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds)
+        .in('category', ['medicines', 'prevention', 'vakcina', 'ovules']);
+      
+      if (!productsError && productsData) {
+        const sortedProducts = sortByLithuanian(productsData, 'name');
+        setProducts(sortedProducts);
+      }
+    } else {
+      // No stock, show empty products list
+      setProducts([]);
     }
   };
 
@@ -188,9 +203,12 @@ export function BulkTreatment() {
   };
 
   const suggestFIFOBatch = async (productId: string) => {
-    if (!productId) return null;
+    if (!productId || !selectedFarm) return null;
 
-    const { data, error } = await supabase.rpc('fn_fifo_batch', { p_product_id: productId });
+    const { data, error } = await supabase.rpc('fn_fifo_batch', { 
+      p_farm_id: selectedFarm.id,
+      p_product_id: productId 
+    });
 
     if (error) {
       console.error('FIFO error:', error);

@@ -71,28 +71,60 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
 
   const loadProducts = async () => {
     try {
-      let query = supabase.from('products').select('*, farm:farms(name, code)');
+      let finalData: any[] = [];
       
-      // If selectedFarm exists, filter by farm (Veterinary module)
-      // If no selectedFarm, load all products (Vetpraktika module)
       if (selectedFarm) {
-        query = query.eq('farm_id', selectedFarm.id);
+        // Load products that belong to this farm
+        const { data: farmProducts, error: farmError } = await supabase
+          .from('products')
+          .select('*, farm:farms(name, code)')
+          .eq('farm_id', selectedFarm.id);
+        
+        if (farmError) throw farmError;
+        
+        // Also load products that have stock at this farm (from batches)
+        const { data: batchesData, error: batchError } = await supabase
+          .from('batches')
+          .select('product_id')
+          .eq('farm_id', selectedFarm.id)
+          .gt('qty_left', 0);
+        
+        if (!batchError && batchesData && batchesData.length > 0) {
+          const productIdsWithStock = [...new Set(batchesData.map((b: any) => b.product_id))];
+          
+          // Get products that have stock but aren't in farmProducts
+          const farmProductIds = new Set((farmProducts || []).map(p => p.id));
+          const additionalProductIds = productIdsWithStock.filter(id => !farmProductIds.has(id));
+          
+          if (additionalProductIds.length > 0) {
+            const { data: additionalProducts, error: additionalError } = await supabase
+              .from('products')
+              .select('*, farm:farms(name, code)')
+              .in('id', additionalProductIds);
+            
+            if (!additionalError && additionalProducts) {
+              finalData = [...(farmProducts || []), ...additionalProducts];
+            } else {
+              finalData = farmProducts || [];
+            }
+          } else {
+            finalData = farmProducts || [];
+          }
+        } else {
+          finalData = farmProducts || [];
+        }
       } else {
-        // In Vetpraktika module, only show products that have a valid farm_id
-        query = query.not('farm_id', 'is', null);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      let finalData = data || [];
-      
-      // In Vetpraktika module (no selectedFarm), deduplicate by product name
-      // Keep only the first occurrence of each product name
-      if (!selectedFarm) {
+        // In Vetpraktika module, load all products
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, farm:farms(name, code)')
+          .not('farm_id', 'is', null);
+        
+        if (error) throw error;
+        
+        // Deduplicate by product name
         const uniqueProducts = new Map<string, any>();
-        finalData.forEach(product => {
+        (data || []).forEach(product => {
           if (!uniqueProducts.has(product.name)) {
             uniqueProducts.set(product.name, product);
           }
