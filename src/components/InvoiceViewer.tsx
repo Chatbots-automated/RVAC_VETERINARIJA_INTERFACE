@@ -241,12 +241,22 @@ export function InvoiceViewer({ showAllInvoices = false }: InvoiceViewerProps) {
                           <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">#</th>
                           <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Produkto pavadinimas</th>
                           <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">Kiekis</th>
-                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Vieneto kaina</th>
-                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Suma</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Vnt. kaina (be nuol.)</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Vnt. kaina (su nuol.)</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Suma (be nuol.)</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-700">Suma (su nuol.)</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {invoiceItems.map((item) => (
+                        {invoiceItems.map((item) => {
+                          // Calculate prices without discount
+                          const hasDiscount = item.discount_percent != null && item.discount_percent > 0;
+                          const unitPriceBeforeDiscount = hasDiscount 
+                            ? item.unit_price / (1 - item.discount_percent / 100)
+                            : item.unit_price;
+                          const totalPriceBeforeDiscount = unitPriceBeforeDiscount * item.quantity;
+                          
+                          return (
                           <tr key={item.id} className="hover:bg-gray-50">
                             <td className="px-3 py-2 text-gray-500 font-medium">
                               {item.line_no}
@@ -265,7 +275,7 @@ export function InvoiceViewer({ showAllInvoices = false }: InvoiceViewerProps) {
                                   {item.sku && (
                                     <span className="text-xs text-gray-500">SKU: {item.sku}</span>
                                   )}
-                                  {item.discount_percent != null && item.discount_percent > 0 && (
+                                  {hasDiscount && (
                                     <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
                                       -{Number(item.discount_percent).toFixed(0)}% nuolaida
                                     </span>
@@ -276,37 +286,60 @@ export function InvoiceViewer({ showAllInvoices = false }: InvoiceViewerProps) {
                             <td className="px-3 py-2 text-center font-medium text-gray-900">
                               {item.quantity}
                             </td>
+                            <td className="px-3 py-2 text-right text-gray-600">
+                              {invoice.currency} {unitPriceBeforeDiscount.toFixed(2)}
+                            </td>
                             <td className="px-3 py-2 text-right font-medium text-gray-700">
                               {invoice.currency} {item.unit_price.toFixed(2)}
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-600">
+                              {invoice.currency} {totalPriceBeforeDiscount.toFixed(2)}
                             </td>
                             <td className="px-3 py-2 text-right font-bold text-blue-700">
                               {invoice.currency} {item.total_price.toFixed(2)}
                             </td>
                           </tr>
-                        ))}
+                          );
+                        })}
                       </tbody>
                       <tfoot className="bg-gray-100 border-t-2 border-gray-300">
                         <tr>
-                          <td colSpan={4} className="px-3 py-2 text-right font-bold text-gray-900">
-                            Iš viso:
+                          <td colSpan={5} className="px-3 py-2 text-right font-bold text-gray-900">
+                            Iš viso (be nuol.):
                           </td>
+                          <td className="px-3 py-2 text-right font-bold text-gray-700">
+                            {invoice.currency} {invoiceItems.reduce((sum, item) => {
+                              const hasDiscount = item.discount_percent != null && item.discount_percent > 0;
+                              const unitPriceBeforeDiscount = hasDiscount 
+                                ? item.unit_price / (1 - item.discount_percent / 100)
+                                : item.unit_price;
+                              return sum + (unitPriceBeforeDiscount * item.quantity);
+                            }, 0).toFixed(2)}
+                          </td>
+                          <td className="px-3 py-2"></td>
+                        </tr>
+                        <tr>
+                          <td colSpan={5} className="px-3 py-2 text-right font-bold text-gray-900">
+                            Iš viso (su nuol.):
+                          </td>
+                          <td className="px-3 py-2"></td>
                           <td className="px-3 py-2 text-right font-bold text-blue-700 text-lg">
                             {invoice.currency} {invoice.total_gross.toFixed(2)}
                           </td>
                         </tr>
-                        <tr>
-                          <td colSpan={4} className="px-3 py-2 text-right text-sm text-gray-600">
-                            Grynoji suma:
+                        <tr className="border-t border-gray-300">
+                          <td colSpan={5} className="px-3 py-2 text-right text-sm text-gray-600">
+                            Grynoji suma (be PVM):
                           </td>
-                          <td className="px-3 py-2 text-right text-sm text-gray-700">
+                          <td colSpan={2} className="px-3 py-2 text-right text-sm text-gray-700">
                             {invoice.currency} {invoice.total_net.toFixed(2)}
                           </td>
                         </tr>
                         <tr>
-                          <td colSpan={4} className="px-3 py-2 text-right text-sm text-gray-600">
+                          <td colSpan={5} className="px-3 py-2 text-right text-sm text-gray-600">
                             PVM ({invoice.vat_rate}%):
                           </td>
-                          <td className="px-3 py-2 text-right text-sm text-gray-700">
+                          <td colSpan={2} className="px-3 py-2 text-right text-sm text-gray-700">
                             {invoice.currency} {invoice.total_vat.toFixed(2)}
                           </td>
                         </tr>

@@ -105,15 +105,34 @@ export function CourseMedicationScheduler({
   }, [initialStartDate, initialSchedule]);
 
   const loadProducts = async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
+    // Load products that have stock at this farm (from batches)
+    const { data: batchesData, error: batchError } = await supabase
+      .from('batches')
+      .select('product_id')
       .eq('farm_id', farmId)
-      .eq('is_active', true)
-      .order('name');
+      .gt('qty_left', 0);
+    
+    if (batchError) {
+      console.error('Error loading batches:', batchError);
+      return;
+    }
+    
+    if (batchesData && batchesData.length > 0) {
+      const productIds = [...new Set(batchesData.map((b: any) => b.product_id))];
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds)
+        .order('name');
 
-    if (!error && data) {
-      setProducts(data);
+      if (!error && data) {
+        console.log('📦 CourseMedicationScheduler loaded products:', data.length, data.map(p => ({ name: p.name, category: p.category })));
+        setProducts(data);
+      }
+    } else {
+      console.log('⚠️ CourseMedicationScheduler: No batches found');
+      setProducts([]);
     }
   };
 

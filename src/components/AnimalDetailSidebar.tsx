@@ -2325,19 +2325,36 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
   const loadResources = async () => {
     if (!selectedFarm) return;
 
-    const [productsRes, diseasesRes, batchesRes, usersRes, hoofConditionsRes] = await Promise.all([
-      supabase.from('products').select('*').eq('farm_id', selectedFarm.id).eq('is_active', true),
+    const [diseasesRes, batchesRes, usersRes, hoofConditionsRes] = await Promise.all([
       supabase.from('diseases').select('*').eq('farm_id', selectedFarm.id).order('name'),
       supabase.from('batches').select('*').eq('farm_id', selectedFarm.id).order('expiry_date'),
       supabase.from('users').select('id, full_name, email').eq('role', 'vet').order('full_name'),
       supabase.from('hoof_condition_codes').select('*').order('code'),
     ]);
 
-    if (productsRes.data) setProducts(productsRes.data);
     if (diseasesRes.data) setDiseases(diseasesRes.data);
     if (batchesRes.data) setBatches(batchesRes.data);
     if (usersRes.data) setUsers(usersRes.data);
     if (hoofConditionsRes.data) setHoofConditions(hoofConditionsRes.data);
+
+    // Load products that have stock at this farm (from batches)
+    // This ensures we show warehouse products that are allocated to this farm
+    if (batchesRes.data && batchesRes.data.length > 0) {
+      const productIds = [...new Set(batchesRes.data.map((b: any) => b.product_id))];
+      
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .in('id', productIds);
+      
+      if (!productsError && productsData) {
+        console.log('📦 VisitModal loaded products:', productsData.length, productsData.map(p => ({ name: p.name, category: p.category })));
+        setProducts(productsData);
+      }
+    } else {
+      console.log('⚠️ VisitModal: No batches found, products empty');
+      setProducts([]);
+    }
   };
 
   const handleCreateDisease = async () => {

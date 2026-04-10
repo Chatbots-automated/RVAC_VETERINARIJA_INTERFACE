@@ -163,13 +163,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) {
-        console.error('Error logging action:', error);
-        throw error;
+        // Log the error but don't throw - audit logging is non-critical
+        // The main operation (treatment, etc.) has already succeeded
+        console.warn('Failed to log action (non-critical):', error.message);
+        return;
       }
 
       console.log('Action logged successfully:', data);
-    } catch (error) {
-      console.error('Failed to log action:', error);
+    } catch (error: any) {
+      // Silently fail - audit logging should not break the user experience
+      console.warn('Failed to log action (non-critical):', error?.message || error);
     }
   };
 

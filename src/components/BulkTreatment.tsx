@@ -363,6 +363,7 @@ export function BulkTreatment() {
         }
       }
 
+      // Log action (non-critical, won't throw)
       await logAction('bulk_treatment_create', null, null, null, {
         animals_count: selectedAnimals.length,
         medications_count: validMedications.length,
@@ -370,6 +371,11 @@ export function BulkTreatment() {
       });
 
       setSuccess(true);
+      
+      // Show success notification
+      const message = `Sėkmingai išsaugota! Gydyta gyvūnų: ${selectedAnimals.length}, Panaudota produktų: ${validMedications.length}`;
+      alert(message);
+      
       setTimeout(() => {
         setSuccess(false);
         // Reset form
@@ -384,7 +390,7 @@ export function BulkTreatment() {
       }, 2000);
     } catch (error) {
       console.error('Error saving bulk treatment:', error);
-      alert('Klaida išsaugant duomenis');
+      alert('Klaida išsaugant gydymus: ' + (error as any)?.message || 'Nežinoma klaida');
     } finally {
       setLoading(false);
     }
