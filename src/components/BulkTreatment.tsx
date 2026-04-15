@@ -313,6 +313,8 @@ export function BulkTreatment() {
 
       for (const animal of selectedAnimals) {
         try {
+          let mainTreatmentId: string | null = null;
+
           // Handle treatments (medicines)
           if (treatments.length > 0) {
             const { data: treatment, error: treatmentError } = await supabase
@@ -330,6 +332,7 @@ export function BulkTreatment() {
               .single();
 
             if (treatmentError) throw treatmentError;
+            mainTreatmentId = treatment.id;
 
             // Add all medicines to this treatment
             const usageItems = treatments.map(med => ({
@@ -350,25 +353,63 @@ export function BulkTreatment() {
             if (usageError) throw usageError;
           }
 
-        // Handle vaccinations
-        for (const vac of vaccinations) {
-          const { error: vacError } = await supabase
-            .from('vaccinations')
+        // Handle vaccinations - ALSO create treatment record so they show in reports
+        if (vaccinations.length > 0) {
+          // Create treatment record for vaccines
+          const { data: vaccineTreatment, error: vacTreatmentError } = await supabase
+            .from('treatments')
             .insert({
               farm_id: selectedFarm.id,
+              reg_date: formData.treatment_date,
               animal_id: animal.id,
-              product_id: vac.product_id,
-              batch_id: vac.batch_id,
-              vaccination_date: formData.treatment_date,
-              dose_amount: parseFloat(vac.qty),
-              unit: vac.unit,
-              dose_number: parseInt(vac.dose_number || '1'),
-              next_booster_date: vac.next_booster_date || null,
-              administered_by: formData.vet_name,
+              vet_name: formData.vet_name,
               notes: formData.notes,
-            });
+              clinical_diagnosis: 'Masinis gydymas (Vakcinos)',
+              animal_condition: 'Patenkinama',
+            })
+            .select()
+            .single();
 
-          if (vacError) throw vacError;
+          if (vacTreatmentError) throw vacTreatmentError;
+          if (!mainTreatmentId) mainTreatmentId = vaccineTreatment.id;
+
+          // Create vaccinations AND usage_items
+          for (const vac of vaccinations) {
+            // Create vaccination record
+            const { error: vacError } = await supabase
+              .from('vaccinations')
+              .insert({
+                farm_id: selectedFarm.id,
+                animal_id: animal.id,
+                product_id: vac.product_id,
+                batch_id: vac.batch_id,
+                vaccination_date: formData.treatment_date,
+                dose_amount: parseFloat(vac.qty),
+                unit: vac.unit,
+                dose_number: parseInt(vac.dose_number || '1'),
+                next_booster_date: vac.next_booster_date || null,
+                administered_by: formData.vet_name,
+                notes: formData.notes,
+              });
+
+            if (vacError) throw vacError;
+
+            // ALSO create usage_item linked to treatment so it shows in reports
+            const { error: usageError } = await supabase
+              .from('usage_items')
+              .insert({
+                farm_id: selectedFarm.id,
+                treatment_id: vaccineTreatment.id,
+                product_id: vac.product_id,
+                batch_id: vac.batch_id,
+                qty: parseFloat(vac.qty),
+                unit: vac.unit,
+                purpose: 'vaccination',
+                administered_date: formData.treatment_date,
+              });
+
+            if (usageError) throw usageError;
+          }
         }
 
         // Handle preventions
@@ -401,6 +442,33 @@ export function BulkTreatment() {
             });
 
           if (usageError) throw usageError;
+        }
+
+        // Create animal visit record for this bulk treatment
+        if (mainTreatmentId) {
+          const procedures: string[] = [];
+          if (treatments.length > 0) procedures.push('Gydymas');
+          if (vaccinations.length > 0) procedures.push('Vakcina');
+          if (preventions.length > 0) procedures.push('Profilaktika');
+
+          const { error: visitError } = await supabase
+            .from('animal_visits')
+            .insert({
+              farm_id: selectedFarm.id,
+              animal_id: animal.id,
+              visit_datetime: new Date(formData.treatment_date).toISOString(),
+              procedures: procedures,
+              status: 'Užbaigtas',
+              notes: formData.notes || null,
+              vet_name: formData.vet_name || null,
+              created_by_user_id: user?.full_name || user?.email || null,
+              treatment_required: procedures.includes('Gydymas'),
+              related_treatment_id: mainTreatmentId,
+            });
+
+          if (visitError) {
+            console.warn(`Failed to create visit for animal ${animal.tag_no}:`, visitError);
+          }
         }
 
           successCount++;

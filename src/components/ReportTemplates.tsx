@@ -189,33 +189,39 @@ export function TreatedAnimalsReport({ data }: TreatedAnimalsReportProps) {
                   )}
                 </td>
                 
-                {/* Column 11: Veterinary services provided - Medicine details */}
+                {/* Column 11: Veterinary services provided - Prescription format */}
                 <td className="border-2 border-gray-300 px-2 py-2 text-[11px]">
                   {row.services && <div className="text-gray-900 mb-1">{row.services}</div>}
-                  {row.medicine_name && (
+                  {row.prescription_text ? (
+                    <div className="text-gray-900 whitespace-pre-line font-mono text-[10px]">
+                      {row.prescription_text}
+                    </div>
+                  ) : row.medicine_name ? (
                     <div className="text-gray-900 font-medium">
                       {row.medicine_name}
+                      {row.medicine_dose && (
+                        <div className="text-gray-700 text-[10px] mt-0.5">
+                          Dozė: {row.medicine_dose} {row.medicine_unit}
+                          {row.medicine_days && ` × ${row.medicine_days} d.`}
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <span className="text-gray-400">-</span>
                   )}
-                  {row.medicine_dose && (
-                    <div className="text-gray-700 text-[10px] mt-0.5">
-                      Dozė: {row.medicine_dose} {row.medicine_unit}
-                      {row.medicine_days && ` × ${row.medicine_days} d.`}
-                    </div>
-                  )}
-                  {!row.services && !row.medicine_name && <span className="text-gray-400">-</span>}
                 </td>
                 
                 {/* Column 12: Withdrawal period - Show both meat and milk */}
                 <td className="border-2 border-gray-300 px-2 py-2 text-[11px]">
-                  {row.withdrawal_until_meat && (
+                  {row.withdrawal_until_meat ? (
                     <div className="text-red-700 text-[10px]">🥩 {formatDateLT(row.withdrawal_until_meat)}</div>
+                  ) : (
+                    <div className="text-gray-500 text-[10px]">🥩 Nėra</div>
                   )}
-                  {row.withdrawal_until_milk && (
+                  {row.withdrawal_until_milk ? (
                     <div className="text-blue-700 text-[10px] mt-0.5">🥛 {formatDateLT(row.withdrawal_until_milk)}</div>
-                  )}
-                  {!row.withdrawal_until_meat && !row.withdrawal_until_milk && (
-                    <span className="text-gray-400">-</span>
+                  ) : (
+                    <div className="text-gray-500 text-[10px] mt-0.5">🥛 Nėra</div>
                   )}
                 </td>
                 
@@ -1120,7 +1126,7 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-500">Nėra</span>
                       )}
                     </td>
                     <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center">
@@ -1141,7 +1147,7 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
                           </div>
                         </div>
                       ) : (
-                        <span className="text-gray-400">-</span>
+                        <span className="text-gray-500">Nėra</span>
                       )}
                     </td>
                     <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">

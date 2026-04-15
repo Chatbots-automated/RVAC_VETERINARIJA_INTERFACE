@@ -227,6 +227,7 @@ export function StockAllocation() {
           if (allocationError) throw allocationError;
 
           // 2. Create corresponding batch in the farm (using farm-specific product ID)
+          // IMPORTANT: Copy purchase_price from warehouse batch for cost tracking!
           const { error: batchError } = await supabase
             .from('batches')
             .insert({
@@ -237,6 +238,8 @@ export function StockAllocation() {
               expiry_date: batch.expiry_date,
               received_qty: qtyFromThisBatch,
               qty_left: qtyFromThisBatch,
+              purchase_price: batch.purchase_price,
+              currency: batch.currency || 'EUR',
               doc_title: 'Warehouse Allocation',
               doc_number: `WH-${batch.lot || 'N/A'}`,
               doc_date: new Date().toISOString().split('T')[0],

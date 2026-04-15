@@ -189,6 +189,8 @@ export function TreatmentCostAnalysis() {
 
         // Calculate vaccination costs (only for vaccinations in range)
         let vaccinationCosts = 0;
+        
+        // Include legacy vaccinations from the vaccinations table
         for (const vaccination of filteredVaccinations) {
           if (vaccination.batches && vaccination.dose_amount) {
             const unitCost = calculateSafeUnitCost(
@@ -276,9 +278,12 @@ export function TreatmentCostAnalysis() {
         .select(`
           id,
           treatment_id,
+          vaccination_id,
           product_id,
           batch_id,
           qty,
+          purpose,
+          administered_date,
           batches(purchase_price, received_qty)
         `)
         .eq('farm_id', selectedFarm.id);
@@ -396,8 +401,32 @@ export function TreatmentCostAnalysis() {
         const medicationCosts = medicationCostsFromUsageItems + medicationCostsFromSync;
 
         // Calculate vaccination costs
+        // NOTE: New vaccinations are tracked in usage_items with purpose='vaccination'
         let vaccinationCosts = 0;
+        
+        // Get all usage items for this animal (for vaccination cost from usage_items)
+        const animalUsageItems = (usageItems || []).filter(ui => {
+          const treatment = animalTreatments.find(t => t.id === ui.treatment_id);
+          return treatment !== undefined;
+        });
+        
+        // Get vaccination costs from usage_items (NEW method)
+        for (const item of animalUsageItems) {
+          if (item.batches && item.qty && item.purpose === 'vaccination') {
+            const unitCost = calculateSafeUnitCost(
+              item.batches.purchase_price,
+              item.batches.received_qty
+            );
+            vaccinationCosts += item.qty * unitCost;
+          }
+        }
+        
+        // Also include legacy vaccinations (that don't have usage_items)
         for (const vaccination of animalVaccinations) {
+          // Skip if this vaccination has usage_items (already counted above)
+          const hasUsageItem = usageItems?.some(ui => ui.vaccination_id === vaccination.id);
+          if (hasUsageItem) continue;
+          
           if (vaccination.batches && vaccination.dose_amount) {
             const unitCost = calculateSafeUnitCost(
               vaccination.batches.purchase_price,
