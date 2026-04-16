@@ -306,6 +306,7 @@ export function Products({ showAllFarms = false }: ProductsProps = {}) {
             <option value="hygiene">Higiena</option>
             <option value="biocide">Biocidas</option>
             <option value="technical">Techniniai</option>
+            <option value="supplier_services">Tiekėjo paslaugos</option>
             <option value="treatment_materials">Gydymo medžiagos</option>
             <option value="reproduction">Reprodukcija</option>
           </select>

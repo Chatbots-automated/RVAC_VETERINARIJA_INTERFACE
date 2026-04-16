@@ -5,7 +5,7 @@ interface ExportColumn {
   key: string;
   header: string;
   width?: number;
-  format?: (value: any) => any;
+  format?: (value: any, row?: any) => any;
 }
 
 export function exportReportToExcel(
@@ -25,7 +25,7 @@ export function exportReportToExcel(
     const exportRow: any = {};
     columns.forEach(col => {
       const value = row[col.key];
-      exportRow[col.header] = col.format ? col.format(value) : value;
+      exportRow[col.header] = col.format ? col.format(value, row) : value;
     });
     return exportRow;
   });
@@ -102,17 +102,30 @@ export const DRUG_JOURNAL_COLUMNS: ExportColumn[] = [
 export const TREATED_ANIMALS_COLUMNS: ExportColumn[] = [
   { 
     key: 'registration_date', 
-    header: 'Registracijos data', 
+    header: '2. Registracijos data', 
     width: 15,
     format: (val: string) => val ? formatDateLT(val) : '-'
   },
-  { key: 'animal_tag', header: 'Gyvūno numeris', width: 18 },
-  { key: 'species', header: 'Rūšis', width: 12 },
-  { key: 'sex', header: 'Lytis', width: 10 },
+  { 
+    key: 'owner_name', 
+    header: '3. Gyvūno laikytojo duomenys (vardas)', 
+    width: 25 
+  },
+  { 
+    key: 'owner_address', 
+    header: '3. Gyvūno laikytojo duomenys (adresas)', 
+    width: 35 
+  },
+  { 
+    key: 'species', 
+    header: '4. Gyvūno rūšis, lytis', 
+    width: 15,
+    format: (val: string, row: any) => `${val || '-'}${row.sex ? ' ' + row.sex : ''}`
+  },
   { 
     key: 'age_months', 
-    header: 'Amžius', 
-    width: 12,
+    header: '5. Gyvūno amžius', 
+    width: 15,
     format: (val: number) => {
       if (!val) return '-';
       const years = Math.floor(val / 12);
@@ -122,43 +135,107 @@ export const TREATED_ANIMALS_COLUMNS: ExportColumn[] = [
       return `${months} mėn.`;
     }
   },
-  { key: 'owner_name', header: 'Laikytojas', width: 25 },
-  { key: 'owner_address', header: 'Adresas', width: 30 },
+  { 
+    key: 'animal_tag', 
+    header: '6. Gyvūno ženklinimo numeris', 
+    width: 20 
+  },
   { 
     key: 'first_symptoms_date', 
-    header: 'Pirmųjų simptomų data', 
+    header: '7. Pirmųjų ligos požymių data', 
     width: 18,
     format: (val: string) => val ? formatDateLT(val) : '-'
   },
-  { key: 'animal_condition', header: 'Gyvūno būklė', width: 20 },
-  { key: 'tests', header: 'Atlikti tyrimai', width: 25 },
-  { key: 'disease_name', header: 'Diagnozė', width: 25 },
-  { key: 'clinical_diagnosis', header: 'Klinikinė diagnozė', width: 25 },
-  { key: 'services', header: 'Paslaugos', width: 25 },
-  { key: 'medicine_name', header: 'Vaistas', width: 25 },
   { 
-    key: 'medicine_dose', 
-    header: 'Dozė', 
-    width: 12,
-    format: (val: number) => val ? `${val}` : '-'
+    key: 'animal_condition', 
+    header: '8. Gyvūno būklė', 
+    width: 18 
   },
-  { key: 'medicine_unit', header: 'Vienetas', width: 12 },
-  { key: 'medicine_days', header: 'Dienų', width: 10 },
+  { 
+    key: 'tests', 
+    header: '9. Atlikti tyrimai', 
+    width: 30 
+  },
+  { 
+    key: 'disease_name', 
+    header: '10. Klinikinė diagnozė', 
+    width: 25 
+  },
+  { 
+    key: 'prescription_text', 
+    header: '11. Gydymas', 
+    width: 40,
+    format: (val: string) => val || '-'
+  },
   { 
     key: 'withdrawal_until_meat', 
-    header: 'Išlauka mėsai', 
-    width: 15,
-    format: (val: string) => val ? formatDateLT(val) : '-'
+    header: '12. Išlauka (mėsa)', 
+    width: 18,
+    format: (val: string) => val ? formatDateLT(val) : 'Nėra'
   },
   { 
     key: 'withdrawal_until_milk', 
-    header: 'Išlauka pienui', 
+    header: '12. Išlauka (pienas)', 
+    width: 18,
+    format: (val: string) => val ? formatDateLT(val) : 'Nėra'
+  },
+  { 
+    key: 'treatment_outcome', 
+    header: '13. Ligos baigtis', 
+    width: 20,
+    format: (val: string, row: any) => {
+      if (val && row.outcome_date) {
+        return `${val} ${formatDateLT(row.outcome_date)}`;
+      }
+      return val || '-';
+    }
+  },
+  { 
+    key: 'veterinarian', 
+    header: '14. Veterinarijos gydytojas', 
+    width: 25 
+  },
+];
+
+export const WITHDRAWAL_REPORT_COLUMNS: ExportColumn[] = [
+  { key: 'farm_name', header: 'Ūkis', width: 25 },
+  { key: 'animal_tag', header: 'Gyvūno žymė', width: 20 },
+  { key: 'species', header: 'Rūšis', width: 15 },
+  { 
+    key: 'treatment_date', 
+    header: 'Gydymo data', 
     width: 15,
     format: (val: string) => val ? formatDateLT(val) : '-'
   },
-  { key: 'treatment_outcome', header: 'Baigtis', width: 15 },
+  { key: 'disease_name', header: 'Liga', width: 25 },
+  { key: 'medicines_used', header: 'Panaudoti vaistai', width: 35 },
+  { 
+    key: 'withdrawal_until_meat', 
+    header: 'Karencija (mėsa)', 
+    width: 25,
+    format: (val: string, row: any) => {
+      if (!val) return 'Nėra';
+      const withdrawalDate = new Date(val);
+      const today = new Date();
+      const daysRemaining = Math.ceil((withdrawalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysRemaining < 0) return `Pasibaigė iki ${formatDateLT(val)}`;
+      return `${daysRemaining} d. iki ${formatDateLT(val)}`;
+    }
+  },
+  { 
+    key: 'withdrawal_until_milk', 
+    header: 'Karencija (pienas)', 
+    width: 25,
+    format: (val: string, row: any) => {
+      if (!val) return 'Nėra';
+      const withdrawalDate = new Date(val);
+      const today = new Date();
+      const daysRemaining = Math.ceil((withdrawalDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysRemaining < 0) return `Pasibaigė iki ${formatDateLT(val)}`;
+      return `${daysRemaining} d. iki ${formatDateLT(val)}`;
+    }
+  },
   { key: 'veterinarian', header: 'Veterinaras', width: 25 },
-  { key: 'notes', header: 'Pastabos', width: 30 },
 ];
 
 export const BIOCIDE_JOURNAL_COLUMNS: ExportColumn[] = [
@@ -315,6 +392,8 @@ export function getColumnsForReportType(reportType: string): ExportColumn[] {
       return DRUG_JOURNAL_COLUMNS;
     case 'treated_animals':
       return TREATED_ANIMALS_COLUMNS;
+    case 'withdrawal':
+      return WITHDRAWAL_REPORT_COLUMNS;
     case 'biocide_journal':
       return BIOCIDE_JOURNAL_COLUMNS;
     case 'insemination_journal':
@@ -332,6 +411,7 @@ export function getReportTitle(reportType: string): string {
   const titles: Record<string, string> = {
     drug_journal: 'Vaistų žurnalas',
     treated_animals: 'Gydomų gyvūnų registras',
+    withdrawal: 'Išlaukų ataskaita',
     biocide_journal: 'Biocidų žurnalas',
     insemination_journal: 'Sėklinimo žurnalas',
     medical_waste: 'Medicininių atliekų žurnalas',

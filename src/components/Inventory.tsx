@@ -80,7 +80,7 @@ export function Inventory() {
         return;
       }
 
-      // Get batches with their products
+      // Get batches with their products (exclude supplier_services as they don't track stock)
       const { data: batchesData, error: batchesError } = await supabase
         .from('batches')
         .select(`
@@ -101,7 +101,8 @@ export function Inventory() {
             primary_pack_size
           )
         `)
-        .eq('farm_id', selectedFarm.id);
+        .eq('farm_id', selectedFarm.id)
+        .neq('products.category', 'supplier_services');
 
       if (batchesError) throw batchesError;
 

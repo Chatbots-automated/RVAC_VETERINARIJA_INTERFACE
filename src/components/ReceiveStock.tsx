@@ -600,22 +600,25 @@ export function ReceiveStock() {
         // Calculate unit price
         const unitPrice = qty > 0 ? (totalPrice / qty) : 0;
 
-        stockEntries.push({
-          farm_id: selectedFarm.id,
-          product_id: matched.id,
-          lot: itemData.batch || bulkReceiveData.lot || null,
-          mfg_date: null,
-          expiry_date: itemData.expiry || null,
-          supplier_id: supplierId,
-          doc_title: 'Invoice',
-          doc_number: invoiceData.invoice.number,
-          doc_date: invoiceData.invoice.date || new Date().toISOString().split('T')[0],
-          purchase_price: totalPrice,
-          currency: invoiceData.invoice.currency || 'EUR',
-          package_size: packageSize,
-          package_count: packageCount,
-          received_qty: packageSize && packageCount ? packageSize * packageCount : qty,
-        });
+        // Skip batch creation for supplier_services category (no stock tracking)
+        if (matched.category !== 'supplier_services') {
+          stockEntries.push({
+            farm_id: selectedFarm.id,
+            product_id: matched.id,
+            lot: itemData.batch || bulkReceiveData.lot || null,
+            mfg_date: null,
+            expiry_date: itemData.expiry || null,
+            supplier_id: supplierId,
+            doc_title: 'Invoice',
+            doc_number: invoiceData.invoice.number,
+            doc_date: invoiceData.invoice.date || new Date().toISOString().split('T')[0],
+            purchase_price: totalPrice,
+            currency: invoiceData.invoice.currency || 'EUR',
+            package_size: packageSize,
+            package_count: packageCount,
+            received_qty: packageSize && packageCount ? packageSize * packageCount : qty,
+          });
+        }
 
         // Store invoice item data for later insertion (use webhook's original values)
         const discountPct =
@@ -637,18 +640,31 @@ export function ReceiveStock() {
         });
       }
 
-      const { data: batches, error: batchesError } = await supabase
-        .from('batches')
-        .insert(stockEntries)
-        .select();
+      // Create batches only if there are stock entries (non-supplier_services products)
+      let batches: any[] = [];
+      
+      if (stockEntries.length > 0) {
+        const { data: createdBatches, error: batchesError } = await supabase
+          .from('batches')
+          .insert(stockEntries)
+          .select();
 
-      if (batchesError) throw batchesError;
+        if (batchesError) throw batchesError;
+        batches = createdBatches || [];
+      }
 
       // Link batches to invoice items
-      const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
-        ...item,
-        batch_id: batches[index]?.id || null,
-      }));
+      // For supplier_services, batch_id will be null
+      let batchIndex = 0;
+      const invoiceItemsWithBatches = invoiceItemsEntries.map((item) => {
+        const product = matchedProducts.get(invoiceItemsEntries.indexOf(item));
+        const batchId = product?.category === 'supplier_services' ? null : (batches[batchIndex++]?.id || null);
+        
+        return {
+          ...item,
+          batch_id: batchId,
+        };
+      });
 
       const { error: itemsError } = await supabase
         .from('invoice_items')
@@ -2127,6 +2143,7 @@ export function ReceiveStock() {
                         <option value="technical">Techniniai</option>
                         <option value="treatment_materials">Gydymo medžiagos</option>
                         <option value="reproduction">Reprodukcija</option>
+                        <option value="supplier_services">Tiekėjo paslaugos</option>
                       </select>
                     </div>
 

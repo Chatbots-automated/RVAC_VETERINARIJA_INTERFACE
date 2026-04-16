@@ -64,7 +64,7 @@ SELECT
     CONCAT(
         'Rp.: ', p.name, E'\n',
         'D.t.d.N ', ui.qty::text, ' ', ui.unit, E'\n',
-        'S. ', COALESCE(ui.administration_route, '-'), ' suleisti ', ui.qty::text, ' ', ui.unit
+        'S. ', COALESCE(ui.administration_route, '-'), ' skirta ', ui.qty::text, ' ', ui.unit
     ) AS prescription_text,
     t.withdrawal_until_meat,
     t.withdrawal_until_milk,
@@ -147,7 +147,7 @@ SELECT
     CONCAT(
         'Rp.: ', p.name, E'\n',
         'D.t.d.N ', SUM(ui.qty)::text, ' ', ui.unit, E'\n',
-        'S. ', COALESCE(ui.administration_route, '-'), ' suleisti ', (SUM(ui.qty) / tc.days)::numeric(10,2)::text, ' ', ui.unit, ' × ', tc.days::text, ' d.'
+        'S. ', COALESCE(ui.administration_route, '-'), ' skirta ', (SUM(ui.qty) / tc.days)::numeric(10,2)::text, ' ', ui.unit, ' × ', tc.days::text, ' d.'
     ) AS prescription_text,
     t.withdrawal_until_meat,
     t.withdrawal_until_milk,
@@ -187,3 +187,59 @@ GROUP BY
     ui.administered_date;
 
 COMMENT ON VIEW public.vw_treated_animals_detailed IS 'Detailed view of treated animals with medications, withdrawal periods, and formatted prescription text (Rp. format)';
+
+-- =====================================================================
+-- Recreate vw_treated_animals_all_farms (was dropped by CASCADE)
+-- =====================================================================
+-- This view is used by AllFarmsReports for the "GYDOMŲ GYVŪNŲ REGISTRACIJOS ŽURNALAS"
+
+CREATE VIEW public.vw_treated_animals_all_farms AS
+SELECT
+    farm_id,
+    treatment_id,
+    animal_id,
+    animal_tag,
+    species,
+    sex,
+    birth_date,
+    age_years,
+    age_months,
+    owner_name,
+    owner_address,
+    registration_date,
+    treatment_start_date,
+    visit_date,
+    first_symptoms_date,
+    animal_condition,
+    tests,
+    clinical_diagnosis,
+    disease_name,
+    product_id,
+    product_name,
+    product_category,
+    registration_code,
+    active_substance,
+    quantity,
+    unit,
+    administration_route,
+    days,
+    medicine_name,
+    medicine_dose,
+    medicine_unit,
+    medicine_days,
+    batch_number,
+    prescription_text,
+    withdrawal_until_meat,
+    withdrawal_until_milk,
+    withdrawal_days_meat,
+    withdrawal_days_milk,
+    treatment_outcome,
+    outcome_date,
+    veterinarian,
+    notes,
+    medication_source,
+    created_by_user_id,
+    created_at
+FROM public.vw_treated_animals_detailed;
+
+COMMENT ON VIEW public.vw_treated_animals_all_farms IS 'All farms view of treated animals - used by AllFarmsReports component';

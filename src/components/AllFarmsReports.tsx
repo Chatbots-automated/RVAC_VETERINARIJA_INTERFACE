@@ -250,7 +250,7 @@ export function AllFarmsReports() {
 
     const reportTitle = getReportTitle(reportType);
     const columns = getColumnsForReportType(reportType);
-    exportReportToExcel(data, columns, reportTitle);
+    exportReportToExcel(data, reportType, columns, reportTitle);
   };
 
   const clearFilters = () => {

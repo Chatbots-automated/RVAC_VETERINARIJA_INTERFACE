@@ -660,22 +660,25 @@ export function WarehouseStock() {
         // Calculate unit price
         const unitPrice = qty > 0 ? (totalPrice / qty) : 0;
 
-        stockEntries.push({
-          product_id: matched.id,
-          invoice_id: invoice.id,
-          lot: itemData.batch || bulkReceiveData.lot || null,
-          mfg_date: null,
-          expiry_date: itemData.expiry || null,
-          supplier_id: supplierId,
-          doc_title: 'Invoice',
-          doc_number: invoiceData.invoice.number,
-          doc_date: invoiceData.invoice.date || new Date().toISOString().split('T')[0],
-          purchase_price: totalPrice,
-          currency: invoiceData.invoice.currency || 'EUR',
-          package_size: packageSize,
-          package_count: packageCount,
-          received_qty: packageSize && packageCount ? packageSize * packageCount : qty,
-        });
+        // Skip batch creation for supplier_services category (no stock tracking)
+        if (matched.category !== 'supplier_services') {
+          stockEntries.push({
+            product_id: matched.id,
+            invoice_id: invoice.id,
+            lot: itemData.batch || bulkReceiveData.lot || null,
+            mfg_date: null,
+            expiry_date: itemData.expiry || null,
+            supplier_id: supplierId,
+            doc_title: 'Invoice',
+            doc_number: invoiceData.invoice.number,
+            doc_date: invoiceData.invoice.date || new Date().toISOString().split('T')[0],
+            purchase_price: totalPrice,
+            currency: invoiceData.invoice.currency || 'EUR',
+            package_size: packageSize,
+            package_count: packageCount,
+            received_qty: packageSize && packageCount ? packageSize * packageCount : qty,
+          });
+        }
 
         // Store invoice item data for later insertion (use webhook's original values)
         const discountPct =
@@ -699,27 +702,39 @@ export function WarehouseStock() {
 
       // If assigning to a farm, create farm batches; otherwise create warehouse batches
       if (assignToFarmId) {
-        // Create farm-level batches
-        const farmBatchEntries = stockEntries.map(entry => ({
-          ...entry,
-          farm_id: assignToFarmId,
-          qty_left: entry.received_qty,
-          status: 'active',
-        }));
+        // Create farm-level batches (only for products that have stock entries)
+        let farmBatches: any[] = [];
+        
+        if (stockEntries.length > 0) {
+          const farmBatchEntries = stockEntries.map(entry => ({
+            ...entry,
+            farm_id: assignToFarmId,
+            qty_left: entry.received_qty,
+            status: 'active',
+          }));
 
-        const { data: farmBatches, error: farmBatchesError } = await supabase
-          .from('batches')
-          .insert(farmBatchEntries)
-          .select();
+          const { data: createdFarmBatches, error: farmBatchesError } = await supabase
+            .from('batches')
+            .insert(farmBatchEntries)
+            .select();
 
-        if (farmBatchesError) throw farmBatchesError;
+          if (farmBatchesError) throw farmBatchesError;
+          farmBatches = createdFarmBatches || [];
+        }
 
         // Link farm batches to invoice items
-        const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
-          ...item,
-          farm_id: assignToFarmId,
-          batch_id: farmBatches[index]?.id || null,
-        }));
+        // For supplier_services, batch_id will be null
+        let batchIndex = 0;
+        const invoiceItemsWithBatches = invoiceItemsEntries.map((item) => {
+          const product = matchedProducts.get(invoiceItemsEntries.indexOf(item));
+          const batchId = product?.category === 'supplier_services' ? null : (farmBatches[batchIndex++]?.id || null);
+          
+          return {
+            ...item,
+            farm_id: assignToFarmId,
+            batch_id: batchId,
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from('invoice_items')
@@ -727,19 +742,31 @@ export function WarehouseStock() {
 
         if (itemsError) throw itemsError;
       } else {
-        // Create warehouse batches
-        const { data: batches, error: batchesError } = await supabase
-          .from('warehouse_batches')
-          .insert(stockEntries)
-          .select();
+        // Create warehouse batches (only for products that have stock entries)
+        let batches: any[] = [];
+        
+        if (stockEntries.length > 0) {
+          const { data: createdBatches, error: batchesError } = await supabase
+            .from('warehouse_batches')
+            .insert(stockEntries)
+            .select();
 
-        if (batchesError) throw batchesError;
+          if (batchesError) throw batchesError;
+          batches = createdBatches || [];
+        }
 
         // Link warehouse batches to invoice items
-        const invoiceItemsWithBatches = invoiceItemsEntries.map((item, index) => ({
-          ...item,
-          warehouse_batch_id: batches[index]?.id || null,
-        }));
+        // For supplier_services, warehouse_batch_id will be null
+        let batchIndex = 0;
+        const invoiceItemsWithBatches = invoiceItemsEntries.map((item) => {
+          const product = matchedProducts.get(invoiceItemsEntries.indexOf(item));
+          const warehouseBatchId = product?.category === 'supplier_services' ? null : (batches[batchIndex++]?.id || null);
+          
+          return {
+            ...item,
+            warehouse_batch_id: warehouseBatchId,
+          };
+        });
 
         const { error: itemsError } = await supabase
           .from('invoice_items')
@@ -1758,6 +1785,7 @@ export function WarehouseStock() {
                       <option value="technical">Techniniai</option>
                       <option value="treatment_materials">Gydymo medžiagos</option>
                       <option value="reproduction">Reprodukcija</option>
+                      <option value="supplier_services">Tiekėjo paslaugos</option>
                     </select>
                   </div>
 
