@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { Package, ArrowRight, Building2, CheckCircle, AlertCircle, Search, Filter, FileText } from 'lucide-react';
 import { InvoiceAllocation } from './InvoiceAllocation';
+import { SearchableSelect } from './SearchableSelect';
 
 interface WarehouseStock {
   warehouse_batch_id: string;
@@ -503,19 +504,16 @@ export function StockAllocation() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Pasirinkite ūkį *
                 </label>
-                <select
+                <SearchableSelect
+                  options={farms.map(farm => ({
+                    value: farm.id,
+                    label: `${farm.name} (${farm.code})`
+                  }))}
                   value={allocationForm.farm_id}
-                  onChange={(e) => setAllocationForm({ ...allocationForm, farm_id: e.target.value })}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Pasirinkite ūkį</option>
-                  {farms.map(farm => (
-                    <option key={farm.id} value={farm.id}>
-                      {farm.name} ({farm.code})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setAllocationForm({ ...allocationForm, farm_id: value })}
+                  placeholder="Ieškoti ūkio..."
+                  className="w-full"
+                />
               </div>
 
               <div>

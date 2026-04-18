@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { FileText, Building2, ArrowRight, Calendar } from 'lucide-react';
+import { FileText, Building2, ArrowRight, Calendar, Package, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDateLT } from '../lib/formatters';
+import { SearchableSelect } from './SearchableSelect';
 
 interface Invoice {
   id: string;
@@ -16,6 +17,20 @@ interface Invoice {
   farm_id: string | null;
 }
 
+interface InvoiceItem {
+  id: string;
+  line_no: number;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  discount_percent: number | null;
+  product?: {
+    name: string;
+    category: string;
+  };
+}
+
 interface Farm {
   id: string;
   name: string;
@@ -28,6 +43,8 @@ export function InvoiceAllocation() {
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<string | null>(null);
   const [selectedFarm, setSelectedFarm] = useState<string>('');
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -59,6 +76,42 @@ export function InvoiceAllocation() {
       setLoading(false);
     }
   };
+
+  const loadInvoiceItems = async (invoiceId: string) => {
+    setLoadingItems(true);
+    try {
+      const { data, error } = await supabase
+        .from('invoice_items')
+        .select(`
+          id,
+          line_no,
+          description,
+          quantity,
+          unit_price,
+          total_price,
+          discount_percent,
+          product:products(name, category)
+        `)
+        .eq('invoice_id', invoiceId)
+        .order('line_no');
+
+      if (error) throw error;
+      setInvoiceItems(data || []);
+    } catch (error) {
+      console.error('Error loading invoice items:', error);
+      setInvoiceItems([]);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedInvoice) {
+      loadInvoiceItems(selectedInvoice);
+    } else {
+      setInvoiceItems([]);
+    }
+  }, [selectedInvoice]);
 
   const handleAssignInvoice = async () => {
     if (!selectedInvoice || !selectedFarm) {
@@ -150,6 +203,7 @@ export function InvoiceAllocation() {
       alert(`Sąskaita #${invoice.invoice_number} sėkmingai priskirta ūkiui "${farm.name}"!`);
       setSelectedInvoice(null);
       setSelectedFarm('');
+      setInvoiceItems([]);
       loadData(); // Reload
     } catch (error: any) {
       console.error('Error assigning invoice:', error);
@@ -227,22 +281,105 @@ export function InvoiceAllocation() {
             </div>
           </div>
 
-          {/* Right: Farm selection and action */}
+          {/* Right: Farm selection, products, and action */}
           <div className="space-y-4">
             <h4 className="font-semibold text-gray-900">2. Pasirinkite ūkį</h4>
-            <select
+            <SearchableSelect
+              options={farms.map(farm => ({
+                value: farm.id,
+                label: `${farm.name} (${farm.code})`
+              }))}
               value={selectedFarm}
-              onChange={(e) => setSelectedFarm(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              onChange={(value) => setSelectedFarm(value)}
+              placeholder="Ieškoti ūkio..."
               disabled={!selectedInvoice}
-            >
-              <option value="">-- Pasirinkite ūkį --</option>
-              {farms.map((farm) => (
-                <option key={farm.id} value={farm.id}>
-                  {farm.name} ({farm.code})
-                </option>
-              ))}
-            </select>
+            />
+
+            {/* Products in selected invoice */}
+            {selectedInvoice && invoiceItems.length > 0 && (
+              <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Package className="w-5 h-5 text-blue-600" />
+                  <h5 className="font-semibold text-gray-900">Produktai sąskaitoje ({invoiceItems.length})</h5>
+                </div>
+                
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {invoiceItems.map((item) => {
+                    const hasDiscount = item.discount_percent != null && item.discount_percent > 0;
+                    const priceBeforeDiscount = hasDiscount 
+                      ? item.unit_price / (1 - item.discount_percent / 100)
+                      : item.unit_price;
+                    
+                    return (
+                      <div key={item.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900">
+                              {item.product?.name || item.description}
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              {item.product && (
+                                <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                  {item.product.category}
+                                </span>
+                              )}
+                              {hasDiscount && (
+                                <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-medium">
+                                  -{item.discount_percent.toFixed(0)}% nuolaida
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-sm text-gray-600 mt-2 space-y-1">
+                              <div className="flex justify-between">
+                                <span>Kiekis:</span>
+                                <span className="font-medium">{item.quantity} vnt.</span>
+                              </div>
+                              {hasDiscount && (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>Kaina (be nuol.):</span>
+                                  <span className="line-through">
+                                    {invoices.find(i => i.id === selectedInvoice)?.currency} {priceBeforeDiscount.toFixed(2)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="flex justify-between">
+                                <span>Vieneto kaina:</span>
+                                <span className="font-medium text-blue-700">
+                                  {invoices.find(i => i.id === selectedInvoice)?.currency} {item.unit_price.toFixed(2)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-base font-semibold border-t border-gray-300 pt-1 mt-1">
+                                <span>Suma:</span>
+                                <span className="text-blue-700">
+                                  {invoices.find(i => i.id === selectedInvoice)?.currency} {item.total_price.toFixed(2)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                <div className="mt-3 pt-3 border-t-2 border-gray-300">
+                  <div className="flex justify-between text-lg font-bold">
+                    <span className="text-gray-900">Bendra suma:</span>
+                    <span className="text-blue-700">
+                      {invoices.find(i => i.id === selectedInvoice)?.currency}{' '}
+                      {invoices.find(i => i.id === selectedInvoice)?.total_gross.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {loadingItems && (
+              <div className="text-center py-4 text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-sm">Kraunami produktai...</p>
+              </div>
+            )}
 
             <button
               onClick={handleAssignInvoice}
