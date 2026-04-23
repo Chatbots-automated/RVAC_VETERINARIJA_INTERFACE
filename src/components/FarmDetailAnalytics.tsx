@@ -4,9 +4,49 @@ import { allocationUnitPricesFromBatchAndInvoice } from '../lib/invoicePricing';
 import { 
   ArrowLeft, 
   Package, 
-  Download
+  Download,
+  FileText
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
+// Helper to convert Lithuanian characters to ASCII for PDF
+function toAscii(text: string | null | undefined): string {
+  if (!text) return '';
+  return String(text)
+    .replace(/ą/g, 'a').replace(/Ą/g, 'A')
+    .replace(/č/g, 'c').replace(/Č/g, 'C')
+    .replace(/ę/g, 'e').replace(/Ę/g, 'E')
+    .replace(/ė/g, 'e').replace(/Ė/g, 'E')
+    .replace(/į/g, 'i').replace(/Į/g, 'I')
+    .replace(/š/g, 's').replace(/Š/g, 'S')
+    .replace(/ų/g, 'u').replace(/Ų/g, 'U')
+    .replace(/ū/g, 'u').replace(/Ū/g, 'U')
+    .replace(/ž/g, 'z').replace(/Ž/g, 'Z');
+}
+
+// Helper to translate category names to Lithuanian
+function translateCategory(category: string | null | undefined): string {
+  if (!category) return 'Nenurodyta';
+  
+  const translations: Record<string, string> = {
+    'medicines': 'Vaistai',
+    'prevention': 'Profilaktika',
+    'reproduction': 'Reprodukcija',
+    'treatment_materials': 'Gydymo medžiagos',
+    'hygiene': 'Higiena',
+    'biocide': 'Biocidas',
+    'technical': 'Techninė',
+    'svirkstukai': 'Švirkštai',
+    'bolusas': 'Bolusas',
+    'vakcina': 'Vakcina',
+    'ovules': 'Ovulės',
+    'supplier_services': 'Tiekėjo paslaugos'
+  };
+  
+  return translations[category] || category;
+}
 
 interface FarmDetailProps {
   farmId: string;
@@ -35,6 +75,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
   const [loading, setLoading] = useState(true);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [isDetailedView, setIsDetailedView] = useState(true);
 
   useEffect(() => {
     loadFarmData();
@@ -204,10 +245,12 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             existing.remaining_value_before_discount =
               existing.remaining_qty * existing.avg_price_before_discount;
           } else {
+            // Default unit: 'vnt' for supplier_services, 'ml' for others
+            const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
             productMap.set(productName, {
               product_name: productName,
               category: product.category || 'N/A',
-              unit: product.primary_pack_unit || 'ml',
+              unit: product.primary_pack_unit || defaultUnit,
               total_allocated_qty: allocatedQty,
               total_used_qty: usedQty,
               remaining_qty: qtyLeft,
@@ -263,10 +306,12 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               existing.remaining_value_before_discount =
                 existing.remaining_qty * existing.avg_price_before_discount;
             } else {
+              // Default unit: 'vnt' for supplier_services, 'ml' for others
+              const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
               productMap.set(productName, {
                 product_name: productName,
                 category: product.category || 'N/A',
-                unit: product.primary_pack_unit || 'ml',
+                unit: product.primary_pack_unit || defaultUnit,
                 total_allocated_qty: receivedQty,
                 total_used_qty: usedQty,
                 remaining_qty: qtyLeft,
@@ -299,24 +344,270 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
     0
   );
 
-  const handleExport = () => {
-    const exportData = allocatedStock.map(item => ({
-      'Produktas': item.product_name,
-      'Kategorija': item.category,
-      'Paskirstyta': item.total_allocated_qty,
-      'Sunaudota': item.total_used_qty,
-      'Vienetas': item.unit,
-      'Kaina (be nuol.)': item.avg_price_before_discount.toFixed(4),
-      'Kaina (su nuol.)': item.avg_purchase_price.toFixed(4),
-      'Nuolaida': item.total_discount.toFixed(2),
-      'Likutis vertė (be nuol.)': item.remaining_value_before_discount.toFixed(2),
-      'Likutis vertė (su nuol.)': item.total_value.toFixed(2)
-    }));
+  const handleExportExcel = () => {
+    const exportData = isDetailedView 
+      ? allocatedStock.map(item => ({
+          'Produktas': item.product_name,
+          'Kategorija': translateCategory(item.category),
+          'Paskirstyta': item.total_allocated_qty,
+          'Sunaudota': item.total_used_qty,
+          'Vienetas': item.unit,
+          'Kaina (be nuol.)': item.avg_price_before_discount.toFixed(4),
+          'Kaina (su nuol.)': item.avg_purchase_price.toFixed(4),
+          'Nuolaida': item.total_discount.toFixed(2),
+          'Likutis vertė (be nuol.)': item.remaining_value_before_discount.toFixed(2),
+          'Likutis vertė (su nuol.)': item.total_value.toFixed(2)
+        }))
+      : allocatedStock.map(item => ({
+          'Vaistas': item.product_name,
+          'Kiekis': item.total_allocated_qty.toFixed(2) + ' ' + item.unit,
+          'Kaina (be nuol.)': '€' + item.avg_price_before_discount.toFixed(4),
+          'Bendra suma': '€' + (item.total_allocated_qty * item.avg_price_before_discount).toFixed(2)
+        }));
+
+    if (isDetailedView) {
+      // Add summary rows for detailed view
+      const totalDiscount = allocatedStock.reduce((sum, item) => sum + item.total_discount, 0);
+      const vat = totalStockValueBeforeDiscount * 0.21;
+      const totalWithVat = totalStockValueBeforeDiscount * 1.21;
+
+      exportData.push({
+        'Produktas': '',
+        'Kategorija': '',
+        'Paskirstyta': '',
+        'Sunaudota': '',
+        'Vienetas': '',
+        'Kaina (be nuol.)': 'Bendra nuolaida:',
+        'Kaina (su nuol.)': '',
+        'Nuolaida': '€' + totalDiscount.toFixed(2),
+        'Likutis vertė (be nuol.)': '',
+        'Likutis vertė (su nuol.)': ''
+      } as any);
+
+      exportData.push({
+        'Produktas': '',
+        'Kategorija': '',
+        'Paskirstyta': '',
+        'Sunaudota': '',
+        'Vienetas': '',
+        'Kaina (be nuol.)': 'Likutis vertė be nuol.:',
+        'Kaina (su nuol.)': '',
+        'Nuolaida': '',
+        'Likutis vertė (be nuol.)': '€' + totalStockValueBeforeDiscount.toFixed(2),
+        'Likutis vertė (su nuol.)': ''
+      } as any);
+
+      exportData.push({
+        'Produktas': '',
+        'Kategorija': '',
+        'Paskirstyta': '',
+        'Sunaudota': '',
+        'Vienetas': '',
+        'Kaina (be nuol.)': 'Likutis vertė su nuol.:',
+        'Kaina (su nuol.)': '',
+        'Nuolaida': '',
+        'Likutis vertė (be nuol.)': '',
+        'Likutis vertė (su nuol.)': '€' + totalStockValue.toFixed(2)
+      } as any);
+
+      exportData.push({
+        'Produktas': '',
+        'Kategorija': '',
+        'Paskirstyta': '',
+        'Sunaudota': '',
+        'Vienetas': '',
+        'Kaina (be nuol.)': 'PVM (21%):',
+        'Kaina (su nuol.)': '',
+        'Nuolaida': '',
+        'Likutis vertė (be nuol.)': '',
+        'Likutis vertė (su nuol.)': '€' + vat.toFixed(2)
+      } as any);
+
+      exportData.push({
+        'Produktas': '',
+        'Kategorija': '',
+        'Paskirstyta': '',
+        'Sunaudota': '',
+        'Vienetas': '',
+        'Kaina (be nuol.)': 'IŠ VISO MOKĖTI (su PVM):',
+        'Kaina (su nuol.)': '',
+        'Nuolaida': '',
+        'Likutis vertė (be nuol.)': '',
+        'Likutis vertė (su nuol.)': '€' + totalWithVat.toFixed(2)
+      } as any);
+    } else if (!isDetailedView) {
+      // Add summary rows for simple view
+      const subtotal = allocatedStock.reduce((sum, item) => 
+        sum + (item.total_allocated_qty * item.avg_price_before_discount), 0
+      );
+      const vat = subtotal * 0.21;
+      const totalWithVat = subtotal * 1.21;
+
+      exportData.push({
+        'Vaistas': '',
+        'Kiekis': '',
+        'Kaina (be nuol.)': 'Tarpinė suma (be PVM):',
+        'Bendra suma': '€' + subtotal.toFixed(2)
+      } as any);
+
+      exportData.push({
+        'Vaistas': '',
+        'Kiekis': '',
+        'Kaina (be nuol.)': 'PVM (21%):',
+        'Bendra suma': '€' + vat.toFixed(2)
+      } as any);
+
+      exportData.push({
+        'Vaistas': '',
+        'Kiekis': '',
+        'Kaina (be nuol.)': 'IŠ VISO MOKĖTI (su PVM):',
+        'Bendra suma': '€' + totalWithVat.toFixed(2)
+      } as any);
+    }
 
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Paskirstytos atsargos');
     XLSX.writeFile(wb, `${farmName}_paskirstytos_atsargos.xlsx`);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF('p', 'mm', 'a4');
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(toAscii('PASKIRSTYTOS ATSARGOS'), doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(toAscii(`Ukis: ${farmName}`), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+    doc.text(toAscii(`Kodas: ${farmCode}`), doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
+    doc.text(toAscii(`Sugeneruota: ${new Date().toLocaleDateString('lt-LT')}`), doc.internal.pageSize.getWidth() / 2, 34, { align: 'center' });
+
+    if (isDetailedView) {
+      // Detailed view PDF
+      const tableData = allocatedStock.map(item => [
+        toAscii(item.product_name),
+        toAscii(translateCategory(item.category)),
+        `${item.total_allocated_qty.toFixed(2)} ${item.unit}`,
+        `${item.total_used_qty.toFixed(2)} ${item.unit}`,
+        `EUR ${item.avg_price_before_discount.toFixed(4)}`,
+        `EUR ${item.avg_purchase_price.toFixed(4)}`,
+        item.total_discount > 0 ? `- EUR ${item.total_discount.toFixed(2)}` : '-',
+        `EUR ${item.remaining_value_before_discount.toFixed(2)}`,
+        `EUR ${item.total_value.toFixed(2)}`
+      ]);
+
+      const totalDiscount = allocatedStock.reduce((sum, item) => sum + item.total_discount, 0);
+      const totalBeforeDiscount = totalStockValueBeforeDiscount;
+      const totalWithDiscount = totalStockValue;
+      const vat = totalBeforeDiscount * 0.21;
+      const totalWithVat = totalBeforeDiscount * 1.21;
+
+      // Add footer rows
+      tableData.push([
+        { content: toAscii('Bendra nuolaida (paskirstyta):'), colSpan: 6, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: `- EUR ${totalDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [255, 243, 205] } } as any,
+        '', ''
+      ]);
+
+      tableData.push([
+        { content: toAscii('Likutis bendra verte be nuolaidos:'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: `EUR ${totalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } } as any,
+        ''
+      ]);
+
+      tableData.push([
+        { content: toAscii('Likutis bendra verte su nuolaida:'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        '',
+        { content: `EUR ${totalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231] } } as any
+      ]);
+
+      tableData.push([
+        { content: 'PVM (21%):', colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        '',
+        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [219, 234, 254] } } as any
+      ]);
+
+      tableData.push([
+        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right', fontSize: 10 } } as any,
+        '',
+        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231], fontSize: 10 } } as any
+      ]);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [[
+          'Produktas',
+          'Kategorija',
+          'Paskirstyta',
+          'Sunaudota',
+          toAscii('Kaina (be nuol.)'),
+          toAscii('Kaina (su nuol.)'),
+          'Nuolaida',
+          toAscii('Likutis be nuol.'),
+          toAscii('Likutis su nuol.')
+        ]],
+        body: tableData,
+        styles: { fontSize: 7, cellPadding: 2 },
+        headStyles: { fillColor: [200, 220, 240], fontStyle: 'bold', halign: 'center' }
+      });
+    } else {
+      // Simple view PDF
+      const tableData = allocatedStock.map(item => {
+        const totalQty = item.total_allocated_qty;
+        const priceBeforeDiscount = item.avg_price_before_discount;
+        const totalPrice = totalQty * priceBeforeDiscount;
+        
+        return [
+          toAscii(item.product_name),
+          `${totalQty.toFixed(2)} ${item.unit}`,
+          `EUR ${priceBeforeDiscount.toFixed(4)}`,
+          `EUR ${totalPrice.toFixed(2)}`
+        ];
+      });
+
+      const subtotal = allocatedStock.reduce((sum, item) => 
+        sum + (item.total_allocated_qty * item.avg_price_before_discount), 0
+      );
+      const vat = subtotal * 0.21;
+      const totalWithVat = subtotal * 1.21;
+
+      tableData.push([
+        { content: toAscii('Tarpine suma (be PVM):'), colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: `EUR ${subtotal.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
+      ]);
+      
+      tableData.push([
+        { content: 'PVM (21%):', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 230, 250] } } as any
+      ]);
+
+      tableData.push([
+        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 240, 220] } } as any
+      ]);
+
+      autoTable(doc, {
+        startY: 40,
+        head: [[
+          'Vaistas',
+          'Kiekis',
+          toAscii('Kaina (be nuol.)'),
+          'Bendra suma'
+        ]],
+        body: tableData,
+        styles: { fontSize: 9, cellPadding: 3 },
+        headStyles: { fillColor: [200, 220, 240], fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+          1: { halign: 'right' },
+          2: { halign: 'right' },
+          3: { halign: 'right' }
+        }
+      });
+    }
+
+    doc.save(`${farmName}_ataskaita_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   if (loading) {
@@ -368,14 +659,33 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               <p className="text-sm text-gray-600">Produktai paskirstyti iš sandėlio</p>
             </div>
           </div>
-          <button
-            onClick={handleExport}
-            disabled={allocatedStock.length === 0}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Download className="w-4 h-4" />
-            Eksportuoti
-          </button>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isDetailedView}
+                onChange={(e) => setIsDetailedView(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              Detali peržiūra
+            </label>
+            <button
+              onClick={handleExportPDF}
+              disabled={allocatedStock.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileText className="w-4 h-4" />
+              PDF
+            </button>
+            <button
+              onClick={handleExportExcel}
+              disabled={allocatedStock.length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Excel
+            </button>
+          </div>
         </div>
 
         {/* Date Filters */}
@@ -417,7 +727,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             <p className="text-lg text-gray-600">Nėra paskirstytų atsargų</p>
             <p className="text-sm text-gray-500 mt-2">Paskirstykite produktus iš Vetpraktika UAB sandėlio</p>
           </div>
-        ) : (
+        ) : isDetailedView ? (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -439,7 +749,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {item.category}
+                        {translateCategory(item.category)}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">
@@ -486,13 +796,89 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                   <td className="px-4 py-3"></td>
                 </tr>
-                <tr className="bg-gray-50 border-t-2 border-gray-300">
+                <tr className="bg-gray-50 border-t border-gray-200">
                   <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
                     Likutis bendra vertė su nuolaida:
                   </td>
                   <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm font-bold text-green-600 text-right">
                     €{totalStockValue.toFixed(2)}
+                  </td>
+                </tr>
+                <tr className="bg-blue-50 border-t-2 border-blue-300">
+                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                    PVM (21%):
+                  </td>
+                  <td className="px-4 py-3"></td>
+                  <td className="px-4 py-3 text-sm font-bold text-blue-700 text-right">
+                    €{(totalStockValueBeforeDiscount * 0.21).toFixed(2)}
+                  </td>
+                </tr>
+                <tr className="bg-green-50 border-t-2 border-green-400">
+                  <td colSpan={7} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
+                    IŠ VISO MOKĖTI (su PVM):
+                  </td>
+                  <td className="px-4 py-4"></td>
+                  <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
+                    €{(totalStockValueBeforeDiscount * 1.21).toFixed(2)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vaistas</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kiekis</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (be nuol.)</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Bendra suma</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {allocatedStock.map((item, idx) => {
+                  const totalPrice = item.total_allocated_qty * item.avg_price_before_discount;
+                  return (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-900">
+                        {item.total_allocated_qty.toFixed(2)} {item.unit}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right text-gray-700">
+                        €{item.avg_price_before_discount.toFixed(4)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
+                        €{totalPrice.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-gray-50 border-t border-gray-200">
+                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                    Tarpinė suma (be PVM):
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                    €{allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0).toFixed(2)}
+                  </td>
+                </tr>
+                <tr className="bg-blue-50 border-t border-blue-200">
+                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                    PVM (21%):
+                  </td>
+                  <td className="px-4 py-3 text-sm font-semibold text-blue-700 text-right">
+                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0) * 0.21).toFixed(2)}
+                  </td>
+                </tr>
+                <tr className="bg-green-50 border-t-2 border-green-300">
+                  <td colSpan={3} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
+                    IŠ VISO MOKĖTI (su PVM):
+                  </td>
+                  <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
+                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0) * 1.21).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>

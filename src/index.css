@@ -176,8 +176,41 @@
     -webkit-print-color-adjust: exact;
   }
 
+  /* Hide sidebar, header, navigation */
+  aside,
+  header,
+  .sidebar,
+  .navigation,
+  button.lg\:hidden,
+  .min-h-screen > div:first-child {
+    display: none !important;
+  }
+
+  /* Hide all navigation and UI elements */
+  nav,
+  [role="navigation"] {
+    display: none !important;
+  }
+
   .no-print {
     display: none !important;
+  }
+
+  /* Show only print content */
+  body * {
+    visibility: hidden;
+  }
+
+  .print-content,
+  .print-content * {
+    visibility: visible;
+  }
+
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
   }
 
   .print-break-avoid {

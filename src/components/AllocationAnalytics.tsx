@@ -4,6 +4,28 @@ import { BarChart3, TrendingUp, Building2, Package, Euro, Download, ChevronRight
 import * as XLSX from 'xlsx';
 import { FarmDetailAnalytics } from './FarmDetailAnalytics';
 
+// Helper to translate category names to Lithuanian
+function translateCategory(category: string | null | undefined): string {
+  if (!category) return 'Nenurodyta';
+  
+  const translations: Record<string, string> = {
+    'medicines': 'Vaistai',
+    'prevention': 'Profilaktika',
+    'reproduction': 'Reprodukcija',
+    'treatment_materials': 'Gydymo medžiagos',
+    'hygiene': 'Higiena',
+    'biocide': 'Biocidas',
+    'technical': 'Techninė',
+    'svirkstukai': 'Švirkštai',
+    'bolusas': 'Bolusas',
+    'vakcina': 'Vakcina',
+    'ovules': 'Ovulės',
+    'supplier_services': 'Tiekėjo paslaugos'
+  };
+  
+  return translations[category] || category;
+}
+
 interface FarmAnalytics {
   farm_id: string;
   farm_name: string;
@@ -46,20 +68,63 @@ export function AllocationAnalytics() {
   const [farmAnalytics, setFarmAnalytics] = useState<FarmAnalytics[]>([]);
   const [productAnalytics, setProductAnalytics] = useState<ProductAnalytics[]>([]);
   const [allocationHistory, setAllocationHistory] = useState<AllocationHistory[]>([]);
+  const [allFarms, setAllFarms] = useState<{ id: string; name: string; code: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'farms' | 'products' | 'history'>('farms');
   const [selectedFarm, setSelectedFarm] = useState<{ id: string; name: string; code: string } | null>(null);
+  
+  // Filter states
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [filterFarmId, setFilterFarmId] = useState('');
 
   useEffect(() => {
     loadAnalytics();
+    loadFarms();
   }, []);
 
-  const loadAnalytics = async () => {
+  useEffect(() => {
+    loadAnalytics();
+  }, [dateFrom, dateTo, filterFarmId]);
+
+  const loadFarms = async () => {
     try {
+      const { data, error } = await supabase
+        .from('farms')
+        .select('id, name, code')
+        .order('name');
+      
+      if (error) throw error;
+      if (data) setAllFarms(data);
+    } catch (error) {
+      console.error('Error loading farms:', error);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    setLoading(true);
+    try {
+      // Build query for history with filters
+      let historyQuery = supabase
+        .from('vw_stock_allocation_history')
+        .select('*')
+        .order('allocation_date', { ascending: false })
+        .limit(100);
+
+      if (dateFrom) {
+        historyQuery = historyQuery.gte('allocation_date', dateFrom);
+      }
+      if (dateTo) {
+        historyQuery = historyQuery.lte('allocation_date', dateTo);
+      }
+      if (filterFarmId) {
+        historyQuery = historyQuery.eq('farm_id', filterFarmId);
+      }
+
       const [farmsRes, productsRes, historyRes] = await Promise.all([
         supabase.from('vw_allocation_analytics_by_farm').select('*').order('total_value_allocated', { ascending: false, nullsFirst: false }),
         supabase.from('vw_allocation_analytics_by_product').select('*').order('total_qty_allocated', { ascending: false, nullsFirst: false }),
-        supabase.from('vw_stock_allocation_history').select('*').order('allocation_date', { ascending: false }).limit(100),
+        historyQuery,
       ]);
 
       if (farmsRes.data) setFarmAnalytics(farmsRes.data);
@@ -76,7 +141,7 @@ export function AllocationAnalytics() {
     const workbook = XLSX.utils.book_new();
 
     if (activeTab === 'farms') {
-      const exportData = farmAnalytics.map(farm => ({
+      const exportData = filteredFarmAnalytics.map(farm => ({
         'Ūkis': farm.farm_name,
         'Kodas': farm.farm_code,
         'Paskirstymų skaičius': farm.total_allocations,
@@ -91,9 +156,9 @@ export function AllocationAnalytics() {
       const worksheet = XLSX.utils.json_to_sheet(exportData);
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Ūkių Statistika');
     } else if (activeTab === 'products') {
-      const exportData = productAnalytics.map(product => ({
+      const exportData = filteredProductAnalytics.map(product => ({
         'Produktas': product.product_name,
-        'Kategorija': product.category,
+        'Kategorija': translateCategory(product.category),
         'Ūkių naudoja': product.farms_using,
         'Paskirstymų skaičius': product.total_allocations,
         'Bendras kiekis': product.total_qty_allocated,
@@ -108,7 +173,7 @@ export function AllocationAnalytics() {
         'Ūkis': record.farm_name,
         'Kodas': record.farm_code,
         'Produktas': record.product_name,
-        'Kategorija': record.category,
+        'Kategorija': translateCategory(record.category),
         'Kiekis': record.allocated_qty,
         'Vienetas': record.unit,
         'LOT': record.lot || '',
@@ -130,6 +195,20 @@ export function AllocationAnalytics() {
       </div>
     );
   }
+
+  // Apply filters to displayed data
+  const filteredFarmAnalytics = farmAnalytics.filter(farm => {
+    if (filterFarmId && farm.farm_id !== filterFarmId) return false;
+    if (dateFrom && farm.last_allocation_date && farm.last_allocation_date < dateFrom) return false;
+    if (dateTo && farm.last_allocation_date && farm.last_allocation_date > dateTo) return false;
+    return true;
+  });
+
+  const filteredProductAnalytics = productAnalytics.filter(product => {
+    if (dateFrom && product.last_allocation_date && product.last_allocation_date < dateFrom) return false;
+    if (dateTo && product.last_allocation_date && product.last_allocation_date > dateTo) return false;
+    return true;
+  });
 
   // Show farm detail view if a farm is selected
   if (selectedFarm) {
@@ -196,6 +275,55 @@ export function AllocationAnalytics() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+        <div className="flex gap-4 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nuo datos</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => setDateFrom(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Iki datos</label>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={(e) => setDateTo(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ūkis</label>
+            <select
+              value={filterFarmId}
+              onChange={(e) => setFilterFarmId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Visi ūkiai</option>
+              {allFarms.map((farm) => (
+                <option key={farm.id} value={farm.id}>
+                  {farm.name} ({farm.code})
+                </option>
+              ))}
+            </select>
+          </div>
+          <button
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+              setFilterFarmId('');
+            }}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Išvalyti
+          </button>
+        </div>
+      </div>
+
       {/* Export Button */}
       <div className="flex justify-end">
         <button
@@ -235,7 +363,7 @@ export function AllocationAnalytics() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {farmAnalytics.map((farm) => (
+                {filteredFarmAnalytics.map((farm) => (
                   <tr 
                     key={farm.farm_id} 
                     onClick={() => setSelectedFarm({ id: farm.farm_id, name: farm.farm_name, code: farm.farm_code })}
@@ -312,14 +440,14 @@ export function AllocationAnalytics() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {productAnalytics.map((product) => (
+                {filteredProductAnalytics.map((product) => (
                   <tr key={product.product_id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="font-medium text-gray-900">{product.product_name}</div>
                     </td>
                     <td className="px-6 py-4">
                       <span className="px-2 py-1 text-xs font-medium bg-blue-50 text-blue-700 rounded-full">
-                        {product.category}
+                        {translateCategory(product.category)}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -373,7 +501,7 @@ export function AllocationAnalytics() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium">{record.product_name}</div>
-                      <div className="text-xs text-gray-500">{record.category}</div>
+                      <div className="text-xs text-gray-500">{translateCategory(record.category)}</div>
                     </td>
                     <td className="px-4 py-3">
                       <span className="font-medium text-blue-600">

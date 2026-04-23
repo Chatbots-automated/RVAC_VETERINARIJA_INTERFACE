@@ -140,7 +140,15 @@ export function InvoiceAllocation() {
 
       if (invoiceError) throw invoiceError;
 
-      // 2. Move warehouse batches to farm batches
+      // 2. Get all invoice items (including supplier services without warehouse batches)
+      const { data: allInvoiceItems, error: itemsError } = await supabase
+        .from('invoice_items')
+        .select('*, products(name, category, primary_pack_unit)')
+        .eq('invoice_id', selectedInvoice);
+
+      if (itemsError) throw itemsError;
+
+      // 3. Move warehouse batches to farm batches
       const { data: warehouseBatches, error: batchesError } = await supabase
         .from('warehouse_batches')
         .select('*, invoice_items!inner(invoice_id)')
@@ -198,6 +206,47 @@ export function InvoiceAllocation() {
           .in('id', warehouseBatchIds);
 
         if (deleteError) throw deleteError;
+      }
+
+      // 4. Create batches for supplier_services and other items without warehouse_batches
+      const itemsWithoutBatches = allInvoiceItems?.filter(item => 
+        !item.warehouse_batch_id && !item.batch_id
+      ) || [];
+
+      if (itemsWithoutBatches.length > 0) {
+        const supplierServiceBatches = itemsWithoutBatches.map(item => ({
+          farm_id: selectedFarm,
+          product_id: item.product_id,
+          lot: null,
+          mfg_date: null,
+          expiry_date: null,
+          received_qty: item.quantity,
+          qty_left: item.quantity,
+          status: 'active',
+          purchase_price: item.unit_price,
+          currency: 'EUR',
+          supplier_id: invoice.supplier_id,
+          doc_number: invoice.invoice_number,
+          doc_date: invoice.invoice_date,
+          invoice_id: selectedInvoice,
+        }));
+
+        const { data: newServiceBatches, error: serviceBatchError } = await supabase
+          .from('batches')
+          .insert(supplierServiceBatches)
+          .select();
+
+        if (serviceBatchError) throw serviceBatchError;
+
+        // Link invoice_items to new batches
+        if (newServiceBatches) {
+          for (let i = 0; i < itemsWithoutBatches.length; i++) {
+            await supabase
+              .from('invoice_items')
+              .update({ batch_id: newServiceBatches[i].id })
+              .eq('id', itemsWithoutBatches[i].id);
+          }
+        }
       }
 
       alert(`Sąskaita #${invoice.invoice_number} sėkmingai priskirta ūkiui "${farm.name}"!`);
