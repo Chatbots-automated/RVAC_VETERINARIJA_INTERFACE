@@ -237,7 +237,7 @@ export function SynchronizationProtocolComponent({ animalId, onProtocolCreated }
       if (!createdSync) throw new Error('Failed to create synchronization');
 
       // Create synchronization steps from the protocol
-      const stepsToCreate = selectedProtocol.steps.map(step => {
+      const protocolStepsToCreate = selectedProtocol.steps.map(step => {
         const stepDate = new Date(startDate);
         stepDate.setDate(stepDate.getDate() + step.day_offset);
 
@@ -257,6 +257,27 @@ export function SynchronizationProtocolComponent({ animalId, onProtocolCreated }
           completed: false
         };
       });
+
+      // AUTOMATICALLY add Sėklinimas step as the last step
+      const lastProtocolStep = selectedProtocol.steps[selectedProtocol.steps.length - 1];
+      const lastDayOffset = lastProtocolStep?.day_offset || 0;
+      const seklinimaDayOffset = lastDayOffset + 1; // One day after the last medication step
+      
+      const seklinamasStepDate = new Date(startDate);
+      seklinamasStepDate.setDate(seklinamasStepDate.getDate() + seklinimaDayOffset);
+
+      const seklinimosStep = {
+        synchronization_id: createdSync.id,
+        farm_id: selectedFarm.id,
+        step_number: protocolStepsToCreate.length + 1,
+        step_name: 'Sėklinimas',
+        scheduled_date: seklinamasStepDate.toISOString().split('T')[0],
+        is_evening: false,
+        medication_product_id: null, // No medication for insemination step
+        completed: false
+      };
+
+      const stepsToCreate = [...protocolStepsToCreate, seklinimosStep];
 
       const { data: steps, error: stepsError } = await supabase
         .from('synchronization_steps')
@@ -352,6 +373,48 @@ export function SynchronizationProtocolComponent({ animalId, onProtocolCreated }
                   console.error('Error completing today step:', step.step_number, completeError);
                 } else {
                   console.log('✅ Completed today step:', step.step_number, 'Deducted:', stepData.dosage, stepData.unit);
+                  
+                  // Mark the visit as completed
+                  const { error: visitUpdateError } = await supabase
+                    .from('animal_visits')
+                    .update({ status: 'Baigtas' })
+                    .eq('sync_step_id', step.id);
+                  
+                  if (visitUpdateError) {
+                    console.error('Error updating visit status:', visitUpdateError);
+                  }
+                  
+                  // Verify usage_item was created by the trigger
+                  setTimeout(async () => {
+                    const { data: usageItems, error: usageError } = await supabase
+                      .from('usage_items')
+                      .select('*')
+                      .eq('batch_id', stepData.batchId)
+                      .eq('product_id', step.medication_product_id)
+                      .eq('purpose', 'synchronization')
+                      .order('created_at', { ascending: false })
+                      .limit(1);
+                    
+                    console.log('🔍 Usage items for this step:', usageItems, usageError);
+                    if (usageItems && usageItems.length > 0) {
+                      console.log('   - Usage item details:', {
+                        id: usageItems[0].id,
+                        qty: usageItems[0].qty,
+                        unit: usageItems[0].unit,
+                        batch_id: usageItems[0].batch_id
+                      });
+                    }
+                    
+                    // Also check batch stock before and after
+                    const { data: batchBefore } = await supabase
+                      .from('batches')
+                      .select('qty_left, lot, status')
+                      .eq('id', stepData.batchId)
+                      .single();
+                    
+                    console.log('📦 Batch stock:', batchBefore);
+                    console.log('   Expected: 495 - 5 = 490');
+                  }, 500);
                 }
               } catch (err) {
                 console.error('Error completing step:', err);

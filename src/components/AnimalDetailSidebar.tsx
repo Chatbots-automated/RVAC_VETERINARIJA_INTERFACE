@@ -4277,12 +4277,13 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               <SynchronizationProtocolComponent
                 animalId={animalId}
                 onProtocolCreated={() => {
-                  setShowVisitModal(false);
                   showNotification('Sinchronizacijos protokolas sukurtas! Vizitai automatiškai sukurti.', 'success');
-                  // Reload visits after a short delay to ensure DB has updated
+                  // Reload data after protocol creation with delay to ensure triggers complete
                   setTimeout(() => {
-                    loadVisits();
-                  }, 500);
+                    loadAllData().then(() => {
+                      console.log('🔄 Reloaded animal data after protocol creation');
+                    });
+                  }, 1000);
                 }}
               />
             </div>
@@ -5398,6 +5399,7 @@ function VisitDetailModal({ visit, animalId, onClose, onSuccess }: { visit: Anim
             <SyncStepMedicationDisplay
               visitId={visit.id}
               syncStepId={visit.sync_step_id}
+              farmId={visit.farm_id}
               onBatchSelected={(batchId) => setSyncStepBatchId(batchId)}
             />
           )}
@@ -5636,7 +5638,7 @@ function VisitDetailModal({ visit, animalId, onClose, onSuccess }: { visit: Anim
   );
 }
 
-function SyncStepMedicationDisplay({ visitId, syncStepId, onBatchSelected }: { visitId: string; syncStepId: string; onBatchSelected?: (batchId: string) => void }) {
+function SyncStepMedicationDisplay({ visitId, syncStepId, farmId, onBatchSelected }: { visitId: string; syncStepId: string; farmId: string; onBatchSelected?: (batchId: string) => void }) {
   const [stepData, setStepData] = useState<any>(null);
   const [productData, setProductData] = useState<any>(null);
   const [batchData, setBatchData] = useState<any>(null);
@@ -5679,12 +5681,24 @@ function SyncStepMedicationDisplay({ visitId, syncStepId, onBatchSelected }: { v
 
         // If visit not completed and no batch selected, load available batches for selection
         if (productRes.data && !step.batch_id && !step.completed) {
-          const { data: batches } = await supabase
+          console.log('🔍 Loading batches for sync step:', {
+            product_id: step.medication_product_id,
+            farm_id: farmId,
+            product_name: productRes.data.name
+          });
+          
+          const { data: batches, error: batchError } = await supabase
             .from('batches')
             .select('*')
             .eq('product_id', step.medication_product_id)
+            .eq('farm_id', farmId)
             .gt('qty_left', 0)
             .order('expiry_date', { ascending: true });
+
+          console.log('📦 Available batches:', batches?.length || 0, batches);
+          if (batchError) {
+            console.error('Error loading batches:', batchError);
+          }
 
           if (batches) {
             setAvailableBatches(batches);
