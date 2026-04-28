@@ -209,6 +209,7 @@ export const WITHDRAWAL_REPORT_COLUMNS: ExportColumn[] = [
   },
   { key: 'disease_name', header: 'Liga', width: 25 },
   { key: 'medicines_used', header: 'Panaudoti vaistai', width: 35 },
+  { key: 'quantities_used', header: 'Sunaudotas kiekis', width: 20 },
   { 
     key: 'withdrawal_until_meat', 
     header: 'Karencija (mėsa)', 

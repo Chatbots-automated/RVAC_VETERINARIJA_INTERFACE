@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   Package,
@@ -55,6 +55,9 @@ const menuItems = [
 export function Layout({ children, currentView, onNavigate, onBackToModules }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notepadOpen, setNotepadOpen] = useState(false);
+  const [hasNotepadContent, setHasNotepadContent] = useState(false);
+  const [notepadPreview, setNotepadPreview] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
   const [farmSwitchModalOpen, setFarmSwitchModalOpen] = useState(false);
   const [farmToConfirm, setFarmToConfirm] = useState<typeof farms[0] | null>(null);
   const [farmSearchQuery, setFarmSearchQuery] = useState('');
@@ -96,6 +99,24 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
       console.error('Sign out error:', error);
     }
   };
+
+  // Show preview when there's content
+  useEffect(() => {
+    if (hasNotepadContent && notepadPreview && selectedFarm) {
+      setShowPreview(true);
+      // Auto-hide after 10 seconds
+      const timer = setTimeout(() => {
+        setShowPreview(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasNotepadContent, notepadPreview, selectedFarm]);
+
+  // Reset preview when farm changes
+  useEffect(() => {
+    setShowPreview(false);
+    setNotepadPreview('');
+  }, [selectedFarm?.id]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -270,7 +291,50 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
         </footer>
       </div>
 
-      <Notepad isOpen={notepadOpen} onClose={() => setNotepadOpen(false)} />
+      <Notepad 
+        isOpen={notepadOpen} 
+        onClose={() => setNotepadOpen(false)} 
+        farmId={selectedFarm?.id}
+        onHasContent={setHasNotepadContent}
+        onContentPreview={setNotepadPreview}
+      />
+
+      {/* Notepad Preview Banner */}
+      {showPreview && notepadPreview && !notepadOpen && (
+        <div className="fixed bottom-6 right-6 max-w-md z-30 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-lg shadow-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <StickyNote className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-sm font-semibold text-gray-900">Užrašinės pranešimas</h4>
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-700 line-clamp-2 mb-2">
+                  {notepadPreview}
+                  {notepadPreview.length >= 100 && '...'}
+                </p>
+                <button
+                  onClick={() => {
+                    setNotepadOpen(true);
+                    setShowPreview(false);
+                  }}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors"
+                >
+                  Skaityti daugiau →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {farmSwitchModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">

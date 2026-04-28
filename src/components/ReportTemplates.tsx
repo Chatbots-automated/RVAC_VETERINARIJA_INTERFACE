@@ -1333,6 +1333,7 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
         toAscii(row.treatment_date ? formatDateLT(row.treatment_date) : '-'),
         toAscii(row.disease_name) || '-',
         toAscii(row.medicines_used) || '-',
+        toAscii(row.quantities_used) || '-',
         meatWithdrawal,
         milkWithdrawal,
         toAscii(row.veterinarian) || '-'
@@ -1349,6 +1350,7 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
         toAscii('Gydymo\ndata'),
         'Liga',
         toAscii('Panaudoti\nvaistai'),
+        toAscii('Sunaudotas\nkiekis'),
         toAscii('Karencija\n(mesa)'),
         toAscii('Karencija\n(pienas)'),
         'Veterinaras'
@@ -1422,6 +1424,7 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Gydymo data</th>
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Liga</th>
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Panaudoti vaistai</th>
+                <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Sunaudotas kiekis</th>
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Karencija (mėsa)</th>
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Karencija (pienas)</th>
                 <th className="border-2 border-gray-300 px-3 py-3 text-xs font-bold text-gray-700">Veterinaras</th>
@@ -1462,6 +1465,9 @@ export function WithdrawalReport({ data, onDataChange }: WithdrawalReportProps) 
                     </td>
                     <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">
                       {row.medicines_used || '-'}
+                    </td>
+                    <td className="border-2 border-gray-300 px-3 py-3 text-xs text-gray-700">
+                      {row.quantities_used || '-'}
                     </td>
                     <td className="border-2 border-gray-300 px-3 py-3 text-xs text-center">
                       {isEditing ? (

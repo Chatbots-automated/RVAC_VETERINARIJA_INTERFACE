@@ -6,9 +6,12 @@ import { useAuth } from '../contexts/AuthContext';
 interface NotepadProps {
   isOpen: boolean;
   onClose: () => void;
+  farmId: string | undefined;
+  onHasContent?: (hasContent: boolean) => void;
+  onContentPreview?: (preview: string) => void;
 }
 
-export default function Notepad({ isOpen, onClose }: NotepadProps) {
+export default function Notepad({ isOpen, onClose, farmId, onHasContent, onContentPreview }: NotepadProps) {
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [noteId, setNoteId] = useState<string | null>(null);
@@ -17,14 +20,22 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
   const [error, setError] = useState<string | null>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // Load note when farm changes (even if not open, for preview)
   useEffect(() => {
-    if (isOpen && user) {
+    if (farmId) {
       loadNote();
     }
-  }, [isOpen, user]);
+  }, [farmId]);
+
+  // Reload when opened
+  useEffect(() => {
+    if (isOpen && farmId) {
+      loadNote();
+    }
+  }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!isOpen || !farmId) return;
 
     const channel = supabase
       .channel('shared_notepad_changes')
@@ -33,12 +44,19 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
         {
           event: '*',
           schema: 'public',
-          table: 'shared_notepad'
+          table: 'shared_notepad',
+          filter: `farm_id=eq.${farmId}`
         },
         (payload) => {
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const newData = payload.new as any;
-            if (newData.last_edited_by !== user.id) {
+            // Only update if it was edited by someone else (or if we don't know who edited it)
+            if (user && newData.last_edited_by !== user.id && newData.farm_id === farmId) {
+              setContent(newData.content || '');
+              setLastSaved(new Date(newData.updated_at));
+              setNoteId(newData.id);
+            } else if (!user && newData.farm_id === farmId) {
+              // If no user context, just update
               setContent(newData.content || '');
               setLastSaved(new Date(newData.updated_at));
               setNoteId(newData.id);
@@ -51,11 +69,11 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isOpen, user]);
+  }, [isOpen, farmId, user]);
 
   const loadNote = async () => {
-    if (!user) {
-      setError('Neprisijungęs vartotojas');
+    if (!farmId) {
+      setError('Nepasirinktas ūkis');
       return;
     }
 
@@ -64,6 +82,7 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
     const { data, error } = await supabase
       .from('shared_notepad')
       .select('*')
+      .eq('farm_id', farmId)
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -78,12 +97,28 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
       setNoteId(data.id);
       setContent(data.content || '');
       setLastSaved(new Date(data.updated_at));
+      const hasContent = !!data.content && data.content.trim().length > 0;
+      if (onHasContent) {
+        onHasContent(hasContent);
+      }
+      if (onContentPreview && hasContent) {
+        // Send first 100 characters as preview
+        const preview = data.content.trim().substring(0, 100);
+        onContentPreview(preview);
+      }
+    } else {
+      if (onHasContent) {
+        onHasContent(false);
+      }
+      if (onContentPreview) {
+        onContentPreview('');
+      }
     }
   };
 
   const saveNote = async (newContent: string) => {
-    if (!user) {
-      setError('Neprisijungęs vartotojas');
+    if (!farmId) {
+      setError('Nepasirinktas ūkis');
       return;
     }
 
@@ -92,21 +127,23 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
 
     try {
       if (noteId) {
+        // Update existing note - don't update last_edited_by to avoid FK constraint issues
         const { error } = await supabase
           .from('shared_notepad')
           .update({
-            content: newContent,
-            last_edited_by: user.id
+            content: newContent
           })
-          .eq('id', noteId);
+          .eq('id', noteId)
+          .eq('farm_id', farmId);
 
         if (error) throw error;
       } else {
+        // Insert new note - don't set last_edited_by to avoid FK constraint issues
         const { data, error } = await supabase
           .from('shared_notepad')
           .insert({
-            content: newContent,
-            last_edited_by: user.id
+            farm_id: farmId,
+            content: newContent
           })
           .select()
           .single();
@@ -117,6 +154,9 @@ export default function Notepad({ isOpen, onClose }: NotepadProps) {
 
       setLastSaved(new Date());
       setError(null);
+      if (onHasContent) {
+        onHasContent(!!newContent && newContent.trim().length > 0);
+      }
     } catch (error: any) {
       console.error('Error saving note:', error);
       setError('Klaida išsaugant: ' + (error.message || 'Nežinoma klaida'));

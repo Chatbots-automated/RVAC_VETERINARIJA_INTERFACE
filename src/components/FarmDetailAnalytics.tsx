@@ -352,7 +352,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           'Paskirstyta': item.total_allocated_qty,
           'Sunaudota': item.total_used_qty,
           'Vienetas': item.unit,
-          'Kaina (be nuol.)': item.avg_price_before_discount.toFixed(4),
+          'Kaina': item.avg_price_before_discount.toFixed(4),
           'Kaina (su nuol.)': item.avg_purchase_price.toFixed(4),
           'Nuolaida': item.total_discount.toFixed(2),
           'Likutis vertė (be nuol.)': item.remaining_value_before_discount.toFixed(2),
@@ -361,7 +361,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       : allocatedStock.map(item => ({
           'Vaistas': item.product_name,
           'Kiekis': item.total_allocated_qty.toFixed(2) + ' ' + item.unit,
-          'Kaina (be nuol.)': '€' + item.avg_price_before_discount.toFixed(4),
+          'Kaina': '€' + item.avg_price_before_discount.toFixed(4),
           'Bendra suma': '€' + (item.total_allocated_qty * item.avg_price_before_discount).toFixed(2)
         }));
 
@@ -377,7 +377,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
-        'Kaina (be nuol.)': 'Bendra nuolaida:',
+        'Kaina': 'Bendra nuolaida:',
         'Kaina (su nuol.)': '',
         'Nuolaida': '€' + totalDiscount.toFixed(2),
         'Likutis vertė (be nuol.)': '',
@@ -390,7 +390,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
-        'Kaina (be nuol.)': 'Likutis vertė be nuol.:',
+        'Kaina': 'Likutis vertė be nuol.:',
         'Kaina (su nuol.)': '',
         'Nuolaida': '',
         'Likutis vertė (be nuol.)': '€' + totalStockValueBeforeDiscount.toFixed(2),
@@ -403,7 +403,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
-        'Kaina (be nuol.)': 'Likutis vertė su nuol.:',
+        'Kaina': 'Likutis vertė su nuol.:',
         'Kaina (su nuol.)': '',
         'Nuolaida': '',
         'Likutis vertė (be nuol.)': '',
@@ -416,7 +416,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
-        'Kaina (be nuol.)': 'PVM (21%):',
+        'Kaina': 'PVM (21%):',
         'Kaina (su nuol.)': '',
         'Nuolaida': '',
         'Likutis vertė (be nuol.)': '',
@@ -429,7 +429,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
-        'Kaina (be nuol.)': 'IŠ VISO MOKĖTI (su PVM):',
+        'Kaina': 'IŠ VISO MOKĖTI (su PVM):',
         'Kaina (su nuol.)': '',
         'Nuolaida': '',
         'Likutis vertė (be nuol.)': '',
@@ -446,21 +446,21 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Vaistas': '',
         'Kiekis': '',
-        'Kaina (be nuol.)': 'Tarpinė suma (be PVM):',
+        'Kaina': 'Tarpinė suma (be PVM):',
         'Bendra suma': '€' + subtotal.toFixed(2)
       } as any);
 
       exportData.push({
         'Vaistas': '',
         'Kiekis': '',
-        'Kaina (be nuol.)': 'PVM (21%):',
+        'Kaina': 'PVM (21%):',
         'Bendra suma': '€' + vat.toFixed(2)
       } as any);
 
       exportData.push({
         'Vaistas': '',
         'Kiekis': '',
-        'Kaina (be nuol.)': 'IŠ VISO MOKĖTI (su PVM):',
+        'Kaina': 'IŠ VISO MOKĖTI (su PVM):',
         'Bendra suma': '€' + totalWithVat.toFixed(2)
       } as any);
     }
@@ -542,7 +542,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           'Kategorija',
           'Paskirstyta',
           'Sunaudota',
-          toAscii('Kaina (be nuol.)'),
+          toAscii('Kaina'),
           toAscii('Kaina (su nuol.)'),
           'Nuolaida',
           toAscii('Likutis be nuol.'),
@@ -593,7 +593,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         head: [[
           'Vaistas',
           'Kiekis',
-          toAscii('Kaina (be nuol.)'),
+          toAscii('Kaina'),
           'Bendra suma'
         ]],
         body: tableData,
@@ -736,7 +736,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kategorija</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Paskirstyta</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Sunaudota</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (be nuol.)</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (su nuol.)</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Nuolaida</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Likutis be nuol.</th>
@@ -833,7 +833,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vaistas</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kiekis</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina (be nuol.)</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Bendra suma</th>
                 </tr>
               </thead>
