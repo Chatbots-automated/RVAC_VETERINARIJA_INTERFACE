@@ -376,12 +376,10 @@ export function BulkTreatment() {
           if (!mainTreatmentId) mainTreatmentId = vaccineTreatment.id;
           if (!visitTreatmentId) visitTreatmentId = vaccineTreatment.id;
 
-          // Create vaccinations (usage_items are created automatically by trigger)
+          // Create vaccinations AND usage_items manually
           for (const vac of vaccinations) {
             // Create vaccination record
-            // NOTE: Database trigger 'create_usage_from_vaccination' will automatically
-            // create a usage_item and deduct stock - DO NOT create usage_item manually!
-            const { error: vacError } = await supabase
+            const { data: vaccinationData, error: vacError } = await supabase
               .from('vaccinations')
               .insert({
                 farm_id: selectedFarm.id,
@@ -395,12 +393,28 @@ export function BulkTreatment() {
                 next_booster_date: vac.next_booster_date || null,
                 administered_by: formData.vet_name,
                 notes: formData.notes,
-              });
+              })
+              .select()
+              .single();
 
             if (vacError) throw vacError;
-            
-            // Stock is automatically deducted by the database trigger
-            // No need to manually create usage_item here
+
+            // Create usage_item manually linked to treatment (not vaccination)
+            // This allows prescription text to appear and withdrawal to be calculated
+            const { error: usageError } = await supabase
+              .from('usage_items')
+              .insert({
+                farm_id: selectedFarm.id,
+                treatment_id: vaccineTreatment.id,
+                product_id: vac.product_id,
+                batch_id: vac.batch_id,
+                qty: parseFloat(vac.qty),
+                unit: vac.unit,
+                purpose: 'vaccination',
+                administered_date: formData.treatment_date,
+              });
+
+            if (usageError) throw usageError;
           }
         }
 
