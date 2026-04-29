@@ -79,7 +79,7 @@ export async function fetchAllRows<T>(
   while (hasMore) {
     let query = supabase
       .from(table)
-      .select(select)
+      .select(select, { count: 'exact', head: false })
       .range(from, from + pageSize - 1);
 
     // Apply filters

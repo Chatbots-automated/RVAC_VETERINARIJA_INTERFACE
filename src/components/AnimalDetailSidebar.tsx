@@ -3247,6 +3247,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                       purpose: med.purpose || 'Gydymas',
                       teat: med.teat || null,
                       administration_route: med.administration_route || null,
+                      administered_date: visitDate,
                     }));
                     
                     const { error: usageError } = await supabase
