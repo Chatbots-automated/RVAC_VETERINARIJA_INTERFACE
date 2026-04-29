@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 interface NotepadProps {
   isOpen: boolean;
   onClose: () => void;
-  farmId: string | undefined;
+  farmId?: string | null; // ALWAYS pass null for global notepad
   onHasContent?: (hasContent: boolean) => void;
   onContentPreview?: (preview: string) => void;
 }
@@ -21,22 +21,23 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   // Load note when farm changes (even if not open, for preview)
+  // farmId can be undefined (global notepad on module selector)
   useEffect(() => {
-    if (farmId) {
-      loadNote();
-    }
+    loadNote();
   }, [farmId]);
 
   // Reload when opened
   useEffect(() => {
-    if (isOpen && farmId) {
+    if (isOpen) {
       loadNote();
     }
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !farmId) return;
+    if (!isOpen) return;
 
+    const filterStr = farmId ? `farm_id=eq.${farmId}` : 'farm_id=is.null';
+    
     const channel = supabase
       .channel('shared_notepad_changes')
       .on(
@@ -45,17 +46,22 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
           event: '*',
           schema: 'public',
           table: 'shared_notepad',
-          filter: `farm_id=eq.${farmId}`
+          filter: filterStr
         },
         (payload) => {
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const newData = payload.new as any;
+            // Check if this update is for the current context (farm or global)
+            const isCorrectContext = farmId ? newData.farm_id === farmId : newData.farm_id === null;
+            
+            if (!isCorrectContext) return;
+            
             // Only update if it was edited by someone else (or if we don't know who edited it)
-            if (user && newData.last_edited_by !== user.id && newData.farm_id === farmId) {
+            if (user && newData.last_edited_by !== user.id) {
               setContent(newData.content || '');
               setLastSaved(new Date(newData.updated_at));
               setNoteId(newData.id);
-            } else if (!user && newData.farm_id === farmId) {
+            } else if (!user) {
               // If no user context, just update
               setContent(newData.content || '');
               setLastSaved(new Date(newData.updated_at));
@@ -72,17 +78,20 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
   }, [isOpen, farmId, user]);
 
   const loadNote = async () => {
-    if (!farmId) {
-      setError('Nepasirinktas ūkis');
-      return;
-    }
-
     setError(null);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('shared_notepad')
-      .select('*')
-      .eq('farm_id', farmId)
+      .select('*');
+
+    // If farmId is provided, filter by it; otherwise get global notepad (farm_id IS NULL)
+    if (farmId) {
+      query = query.eq('farm_id', farmId);
+    } else {
+      query = query.is('farm_id', null);
+    }
+
+    const { data, error } = await query
       .order('updated_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -101,10 +110,14 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
       if (onHasContent) {
         onHasContent(hasContent);
       }
-      if (onContentPreview && hasContent) {
-        // Send first 100 characters as preview
-        const preview = data.content.trim().substring(0, 100);
-        onContentPreview(preview);
+      if (onContentPreview) {
+        if (hasContent) {
+          // Send first 100 characters as preview
+          const preview = data.content.trim().substring(0, 100);
+          onContentPreview(preview);
+        } else {
+          onContentPreview('');
+        }
       }
     } else {
       if (onHasContent) {
@@ -117,32 +130,34 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
   };
 
   const saveNote = async (newContent: string) => {
-    if (!farmId) {
-      setError('Nepasirinktas ūkis');
-      return;
-    }
-
     setIsSaving(true);
     setError(null);
 
     try {
       if (noteId) {
         // Update existing note - don't update last_edited_by to avoid FK constraint issues
-        const { error } = await supabase
+        let updateQuery = supabase
           .from('shared_notepad')
           .update({
             content: newContent
           })
-          .eq('id', noteId)
-          .eq('farm_id', farmId);
+          .eq('id', noteId);
 
+        // Add farm_id filter
+        if (farmId) {
+          updateQuery = updateQuery.eq('farm_id', farmId);
+        } else {
+          updateQuery = updateQuery.is('farm_id', null);
+        }
+
+        const { error } = await updateQuery;
         if (error) throw error;
       } else {
         // Insert new note - don't set last_edited_by to avoid FK constraint issues
         const { data, error } = await supabase
           .from('shared_notepad')
           .insert({
-            farm_id: farmId,
+            farm_id: farmId || null,
             content: newContent
           })
           .select()
@@ -192,8 +207,8 @@ export default function Notepad({ isOpen, onClose, farmId, onHasContent, onConte
           <div className="flex items-center gap-2">
             <StickyNote className="w-5 h-5 text-amber-600" />
             <div>
-              <h2 className="text-lg font-semibold text-gray-800">Bendros užrašinės</h2>
-              <p className="text-xs text-gray-600">Matoma visiems vartotojams</p>
+              <h2 className="text-lg font-semibold text-gray-800">Bendra užrašinė</h2>
+              <p className="text-xs text-gray-600">Matoma visiems vartotojams visuose ūkiuose ir moduliuose</p>
             </div>
           </div>
           <button

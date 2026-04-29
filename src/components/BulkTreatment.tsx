@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { fetchAllRows, sortByLithuanian } from '../lib/helpers';
 import { Product, Animal, StockByBatch, Unit } from '../lib/types';
-import { Users, Plus, Trash2, Check, Search, Syringe, Package } from 'lucide-react';
+import { Users, Plus, Trash2, Check, Search, Syringe, Package, UserPlus } from 'lucide-react';
 import { formatDateLT } from '../lib/formatters';
 import { useAuth } from '../contexts/AuthContext';
 import { useFarm } from '../contexts/FarmContext';
@@ -71,18 +71,29 @@ export function BulkTreatment() {
   const [formData, setFormData] = useState({
     treatment_date: new Date().toISOString().split('T')[0],
     vet_name: user?.full_name || user?.email || '',
+    veterinarian_id: '',
     notes: '',
+    animal_condition: 'Patenkinama',
   });
+  
+  const [veterinarians, setVeterinarians] = useState<Array<{ id: string; name: string }>>([]);
+  const [showVetCreate, setShowVetCreate] = useState(false);
+  const [newVetName, setNewVetName] = useState('');
 
-  // Auto-update vet_name when user changes
+  // Auto-update vet_name and veterinarian_id when user changes or veterinarians load
   useEffect(() => {
     if (user) {
+      const userName = user.full_name || user.email || '';
+      // Try to find matching veterinarian
+      const matchingVet = veterinarians.find(v => v.name === userName);
+      
       setFormData(prev => ({
         ...prev,
-        vet_name: user.full_name || user.email || ''
+        vet_name: userName,
+        veterinarian_id: matchingVet ? matchingVet.id : ''
       }));
     }
-  }, [user]);
+  }, [user, veterinarians]);
 
   useEffect(() => {
     loadData();
@@ -95,14 +106,16 @@ export function BulkTreatment() {
   const loadData = async () => {
     if (!selectedFarm) return;
 
-    const [animalsRes, batchesRes, vetsRes] = await Promise.all([
+    const [animalsRes, batchesRes, vetsRes, veterinariansRes] = await Promise.all([
       supabase.from('animals').select('*').eq('farm_id', selectedFarm.id).order('tag_no'),
       supabase.from('stock_by_batch').select('*').eq('farm_id', selectedFarm.id).gt('on_hand', 0),
       supabase.from('treatments').select('vet_name').eq('farm_id', selectedFarm.id).not('vet_name', 'is', null),
+      supabase.from('veterinarians').select('id, name').eq('is_active', true).order('name'),
     ]);
 
     setAnimals(animalsRes.data || []);
     if (batchesRes.data) setBatches(batchesRes.data);
+    if (veterinariansRes.data) setVeterinarians(veterinariansRes.data);
 
     // Get unique vet names
     if (vetsRes.data) {
@@ -128,6 +141,33 @@ export function BulkTreatment() {
     } else {
       // No stock, show empty products list
       setProducts([]);
+    }
+  };
+
+  const createVeterinarian = async () => {
+    if (!newVetName.trim()) {
+      alert('Įveskite veterinaro vardą');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('veterinarians')
+        .insert({ name: newVetName.trim() })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setVeterinarians([...veterinarians, data]);
+      setFormData({ ...formData, veterinarian_id: data.id, vet_name: data.name });
+      setNewVetName('');
+      setShowVetCreate(false);
+
+      alert('Veterinaras sėkmingai sukurtas');
+    } catch (error: any) {
+      console.error('Error creating veterinarian:', error);
+      alert('Klaida kuriant veterinarą: ' + error.message);
     }
   };
 
@@ -325,9 +365,10 @@ export function BulkTreatment() {
                 reg_date: formData.treatment_date,
                 animal_id: animal.id,
                 vet_name: formData.vet_name,
+                veterinarian_id: formData.veterinarian_id || null,
                 notes: formData.notes,
                 clinical_diagnosis: 'Masinis gydymas',
-                animal_condition: 'Patenkinama',
+                animal_condition: formData.animal_condition,
               })
               .select()
               .single();
@@ -367,7 +408,7 @@ export function BulkTreatment() {
               vet_name: formData.vet_name,
               notes: formData.notes,
               clinical_diagnosis: 'Masinis gydymas (Vakcinos)',
-              animal_condition: 'Patenkinama',
+              animal_condition: formData.animal_condition,
             })
             .select()
             .single();
@@ -563,7 +604,7 @@ export function BulkTreatment() {
         {/* Basic Info */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Pagrindinė informacija</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Gydymo data
@@ -580,19 +621,79 @@ export function BulkTreatment() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Veterinaras
               </label>
-              <input
-                type="text"
-                value={formData.vet_name}
-                onChange={(e) => setFormData({ ...formData, vet_name: e.target.value })}
-                list="vet-names"
+              <div className="space-y-2">
+                <select
+                  value={formData.veterinarian_id}
+                  onChange={(e) => {
+                    const vetId = e.target.value;
+                    const vet = veterinarians.find(v => v.id === vetId);
+                    setFormData({ 
+                      ...formData, 
+                      veterinarian_id: vetId,
+                      vet_name: vet ? vet.name : formData.vet_name
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">Pasirinkite veterinarą...</option>
+                  {veterinarians.map(vet => (
+                    <option key={vet.id} value={vet.id}>{vet.name}</option>
+                  ))}
+                </select>
+                
+                {showVetCreate ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newVetName}
+                      onChange={(e) => setNewVetName(e.target.value)}
+                      placeholder="Naujo veterinaro vardas"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), createVeterinarian())}
+                    />
+                    <button
+                      type="button"
+                      onClick={createVeterinarian}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                    >
+                      Sukurti
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowVetCreate(false);
+                        setNewVetName('');
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                    >
+                      Atšaukti
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowVetCreate(true)}
+                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Pridėti naują veterinarą
+                  </button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gyvūno būklė
+              </label>
+              <select
+                value={formData.animal_condition}
+                onChange={(e) => setFormData({ ...formData, animal_condition: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Veterinaro vardas"
-              />
-              <datalist id="vet-names">
-                {vetNames.map(name => (
-                  <option key={name} value={name} />
-                ))}
-              </datalist>
+              >
+                <option value="Patenkinama">Patenkinama</option>
+                <option value="Abejotina">Abejotina</option>
+                <option value="Kliniškai sveikas">Kliniškai sveikas</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

@@ -34,15 +34,6 @@ interface TreatedAnimalsReportProps {
 }
 
 export function TreatedAnimalsReport({ data }: TreatedAnimalsReportProps) {
-  // Debug: Log comprehensive data for troubleshooting
-  console.log('📊 TreatedAnimalsReport - Total rows:', data.length);
-  console.log('📊 TreatedAnimalsReport - First row owner_name:', data[0]?.owner_name);
-  console.log('📊 TreatedAnimalsReport - First row owner_address:', data[0]?.owner_address);
-  console.log('📊 TreatedAnimalsReport - First row prescription_text:', data[0]?.prescription_text);
-  console.log('📊 TreatedAnimalsReport - First row product_name:', data[0]?.product_name);
-  console.log('📊 TreatedAnimalsReport - First row services:', data[0]?.services);
-  console.log('📊 TreatedAnimalsReport - All column names:', data[0] ? Object.keys(data[0]) : 'NO DATA');
-  
   // Helper function to calculate animal age
   const calculateAge = (ageMonths: number | null, birthDate: string | null): string => {
     if (ageMonths) {
@@ -304,7 +295,6 @@ export function TreatedAnimalsReport({ data }: TreatedAnimalsReportProps) {
                 
                 {/* Column 3: Owner details */}
                 <td className="border-2 border-gray-300 px-2 py-2 text-[11px]">
-                  {idx === 0 && console.log('🔍 Row 0 Owner data:', { owner_name: row.owner_name, owner_address: row.owner_address })}
                   {row.owner_name && <div className="font-semibold text-gray-900">{row.owner_name}</div>}
                   {row.owner_address && <div className="text-gray-600 text-[10px] mt-0.5">{row.owner_address}</div>}
                   {!row.owner_name && !row.owner_address && <span className="text-gray-400">-</span>}
@@ -351,13 +341,6 @@ export function TreatedAnimalsReport({ data }: TreatedAnimalsReportProps) {
                 
                 {/* Column 11: Veterinary services provided - Prescription format */}
                 <td className="border-2 border-gray-300 px-2 py-2 text-[11px]">
-                  {idx === 0 && console.log('🔍 Row 0 Gydymas data:', { 
-                    services: row.services, 
-                    prescription_text: row.prescription_text, 
-                    medicine_name: row.medicine_name,
-                    medicine_dose: row.medicine_dose,
-                    medicine_unit: row.medicine_unit
-                  })}
                   {row.services && <div className="text-gray-900 mb-1">{row.services}</div>}
                   {row.prescription_text ? (
                     <div className="text-gray-900 whitespace-pre-line font-mono text-[10px]">

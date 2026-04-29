@@ -1,5 +1,7 @@
-import { Stethoscope, Euro, Package, Shield, LogOut, Building2, Warehouse } from 'lucide-react';
+import { useState } from 'react';
+import { Stethoscope, Euro, Package, Shield, LogOut, Building2, Warehouse, StickyNote, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import Notepad from './Notepad';
 
 interface ModuleSelectorProps {
   onSelectModule: (module: 'veterinarija' | 'klientai' | 'vetpraktika') => void;
@@ -7,6 +9,10 @@ interface ModuleSelectorProps {
 
 export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
   const { signOut, user } = useAuth();
+  const [isNotepadOpen, setIsNotepadOpen] = useState(false);
+  const [hasNotepadContent, setHasNotepadContent] = useState(false);
+  const [notepadPreview, setNotepadPreview] = useState('');
+  const [showPreview, setShowPreview] = useState(true);
 
   const handleLogout = async () => {
     try {
@@ -237,6 +243,52 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
           </div>
         </div>
       </div>
+
+      {/* Global Notepad (no farmId) */}
+      <Notepad
+        isOpen={isNotepadOpen}
+        onClose={() => setIsNotepadOpen(false)}
+        farmId={null}
+        onHasContent={setHasNotepadContent}
+        onContentPreview={setNotepadPreview}
+      />
+
+      {/* Notepad Preview Banner */}
+      {showPreview && notepadPreview && !isNotepadOpen && (
+        <div className="fixed bottom-24 right-8 max-w-md z-30 animate-in slide-in-from-bottom-4 duration-300">
+          <div className="bg-gradient-to-r from-amber-50 to-yellow-50 border-l-4 border-amber-400 rounded-lg shadow-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <StickyNote className="w-5 h-5 text-amber-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-1">
+                  <h4 className="text-sm font-semibold text-gray-900">Bendros užrašinės pranešimas</h4>
+                  <button
+                    onClick={() => setShowPreview(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-700 line-clamp-2 mb-2">
+                  {notepadPreview}
+                  {notepadPreview.length >= 100 && '...'}
+                </p>
+                <button
+                  onClick={() => {
+                    setIsNotepadOpen(true);
+                    setShowPreview(false);
+                  }}
+                  className="text-xs font-medium text-amber-700 hover:text-amber-800 transition-colors"
+                >
+                  Skaityti daugiau →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

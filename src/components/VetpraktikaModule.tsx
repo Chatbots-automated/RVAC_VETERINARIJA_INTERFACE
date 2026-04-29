@@ -5,6 +5,7 @@ import { StockAllocation } from './StockAllocation';
 import { AllFarmsReports } from './AllFarmsReports';
 import { AllocationAnalytics } from './AllocationAnalytics';
 import { Products } from './Products';
+import Notepad from './Notepad';
 import { 
   Package, 
   ArrowRight, 
@@ -16,7 +17,8 @@ import {
   Warehouse,
   Menu,
   X,
-  Pill
+  Pill,
+  StickyNote
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -36,6 +38,7 @@ const menuItems = [
 export function VetpraktikaModule({ onBackToModules }: VetpraktikaModuleProps) {
   const [currentView, setCurrentView] = useState('warehouse-inventory');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [notepadOpen, setNotepadOpen] = useState(false);
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -152,6 +155,14 @@ export function VetpraktikaModule({ onBackToModules }: VetpraktikaModuleProps) {
 
               <div className="flex items-center gap-1 xl:gap-3">
                 <button
+                  onClick={() => setNotepadOpen(true)}
+                  className="flex items-center gap-2 px-3 xl:px-4 py-2 text-sm font-medium text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-300"
+                  title="Atidaryti bendrą užrašinę"
+                >
+                  <StickyNote className="w-4 h-4" />
+                  <span className="hidden xl:inline">Užrašinė</span>
+                </button>
+                <button
                   onClick={onBackToModules}
                   className="hidden xl:flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
                   title="Modulių pasirinkimas"
@@ -206,6 +217,13 @@ export function VetpraktikaModule({ onBackToModules }: VetpraktikaModuleProps) {
           </div>
         </footer>
       </div>
+
+      {/* Global Notepad (no farmId) */}
+      <Notepad
+        isOpen={notepadOpen}
+        onClose={() => setNotepadOpen(false)}
+        farmId={null}
+      />
     </div>
   );
 }

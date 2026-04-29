@@ -360,14 +360,6 @@ export function Reports() {
           // Add timestamp to bust any caching
           result = await fetchAllRows('vw_treated_animals_detailed', '*', 'registration_date', filters);
           
-          // Debug: Check what fetchAllRows returned - FULL DATA
-          console.log('🔍 fetchAllRows - Total rows:', result.length);
-          console.log('🔍 fetchAllRows - First row owner_name:', result[0]?.owner_name);
-          console.log('🔍 fetchAllRows - First row owner_address:', result[0]?.owner_address);
-          console.log('🔍 fetchAllRows - First row prescription_text:', result[0]?.prescription_text);
-          console.log('🔍 fetchAllRows - First row product_name:', result[0]?.product_name);
-          console.log('🔍 fetchAllRows - All column names:', result[0] ? Object.keys(result[0]) : 'NO DATA');
-
           // Apply additional filters that can't be done in the query
           if (filterProduct) {
             result = result.filter(r => {
@@ -457,7 +449,11 @@ export function Reports() {
           if (filterAnimal) query = query.eq('animal_id', filterAnimal);
 
           const { data, error } = await query;
-          if (error) throw error;
+          if (error) {
+            console.error('❌ Error loading withdrawal report:', error);
+            throw error;
+          }
+
 
           result = data || [];
           break;

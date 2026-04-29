@@ -32,7 +32,7 @@ export function Treatment() {
     animal_id: '',
     disease_id: '',
     first_symptoms_date: '',
-    animal_condition: '',
+    animal_condition: 'Patenkinama',
     tests: '',
     clinical_diagnosis: '',
     services: '',
@@ -336,7 +336,7 @@ export function Treatment() {
         animal_id: '',
         disease_id: '',
         first_symptoms_date: '',
-        animal_condition: '',
+        animal_condition: 'Patenkinama',
         tests: '',
         clinical_diagnosis: '',
         services: '',
@@ -480,13 +480,15 @@ export function Treatment() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Gyvūno būklė
                 </label>
-                <textarea
-                  value={formData.animal_condition}
+                <select
+                  value={formData.animal_condition || 'Patenkinama'}
                   onChange={(e) => setFormData({ ...formData, animal_condition: e.target.value })}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  rows={2}
-                  placeholder="Aprašykite gyvūno būklę..."
-                />
+                >
+                  <option value="Patenkinama">Patenkinama</option>
+                  <option value="Abejotina">Abejotina</option>
+                  <option value="Kliniškai sveikas">Kliniškai sveikas</option>
+                </select>
               </div>
 
               <div className="md:col-span-2">

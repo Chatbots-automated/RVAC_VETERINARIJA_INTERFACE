@@ -294,7 +294,7 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
       <Notepad 
         isOpen={notepadOpen} 
         onClose={() => setNotepadOpen(false)} 
-        farmId={selectedFarm?.id}
+        farmId={null}
         onHasContent={setHasNotepadContent}
         onContentPreview={setNotepadPreview}
       />
@@ -309,7 +309,7 @@ export function Layout({ children, currentView, onNavigate, onBackToModules }: L
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-sm font-semibold text-gray-900">Užrašinės pranešimas</h4>
+                  <h4 className="text-sm font-semibold text-gray-900">Bendros užrašinės pranešimas</h4>
                   <button
                     onClick={() => setShowPreview(false)}
                     className="text-gray-400 hover:text-gray-600 transition-colors"

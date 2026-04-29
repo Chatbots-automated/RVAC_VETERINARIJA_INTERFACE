@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { Animal, AnimalVisit, VisitProcedure, VisitStatus, Treatment, Product, UsageItem, HoofLeg, HoofClaw, HoofConditionCode, Unit } from '../lib/types';
-import { X, Calendar, Thermometer, Pill, Syringe, FileText, Plus, CheckCircle, CheckCircle2, XCircle, Clock, AlertCircle, Package, Check, Filter, Search, ExternalLink, Milk, Activity, Trash2 } from 'lucide-react';
+import { X, Calendar, Thermometer, Pill, Syringe, FileText, Plus, CheckCircle, CheckCircle2, XCircle, Clock, AlertCircle, Package, Check, Filter, Search, ExternalLink, Milk, Activity, Trash2, UserPlus } from 'lucide-react';
 import { formatDateTimeLT, formatDateLT } from '../lib/formatters';
 import { normalizeNumberInput, sortByLithuanian } from '../lib/helpers';
 import { useAuth } from '../contexts/AuthContext';
@@ -1844,33 +1844,43 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     status: visitToEdit?.status || 'Planuojamas' as VisitStatus,
     notes: visitToEdit?.notes || '',
     vet_name: visitToEdit?.vet_name || user?.full_name || user?.email || '',
+    veterinarian_id: '',
     next_visit_required: visitToEdit?.next_visit_required || false,
     next_visit_date: visitToEdit?.next_visit_date?.slice(0, 16) || '',
     treatment_required: visitToEdit?.treatment_required || false,
   });
 
-  // Auto-update vet_name when user changes
-  useEffect(() => {
-    if (user && !visitToEdit) {
-      setFormData(prev => ({
-        ...prev,
-        vet_name: user.full_name || user.email || ''
-      }));
-    }
-  }, [user, visitToEdit]);
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [diseases, setDiseases] = useState<any[]>([]);
   const [batches, setBatches] = useState<any[]>([]);
   const [stockLevels, setStockLevels] = useState<Record<string, number>>({});
   const [users, setUsers] = useState<Array<{ id: string; full_name: string }>>([]);
+  const [veterinarians, setVeterinarians] = useState<Array<{ id: string; name: string }>>([]);
+  const [showVetCreate, setShowVetCreate] = useState(false);
+  const [newVetName, setNewVetName] = useState('');
+
+  // Auto-update vet_name and veterinarian_id when user changes or veterinarians load
+  useEffect(() => {
+    if (user && !visitToEdit) {
+      const userName = user.full_name || user.email || '';
+      // Try to find matching veterinarian
+      const matchingVet = veterinarians.find(v => v.name === userName);
+      
+      setFormData(prev => ({
+        ...prev,
+        vet_name: userName,
+        veterinarian_id: matchingVet ? matchingVet.id : ''
+      }));
+    }
+  }, [user, visitToEdit, veterinarians]);
 
   // Treatment form data
   const [treatmentData, setTreatmentData] = useState({
     disease_id: '',
     clinical_diagnosis: '',
     tests: '',
-    animal_condition: '',
+    animal_condition: 'Patenkinama',
     outcome: '',
     outcome_date: '',
     services: '',
@@ -2010,7 +2020,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     // Also return stock from treatment_courses
     const { data: courses, error: coursesError } = await supabase
       .from('treatment_courses')
-      .select('id, batch_id, total_qty')
+      .select('id, batch_id, total_dose')
       .eq('treatment_id', treatmentId);
 
     if (coursesError) throw coursesError;
@@ -2030,7 +2040,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
           continue;
         }
 
-        const newQtyLeft = (batch.qty_left || 0) + (course.total_qty || 0);
+        const newQtyLeft = (batch.qty_left || 0) + (course.total_dose || 0);
         const newStatus = batch.status === 'depleted' && newQtyLeft > 0 ? 'active' : batch.status;
 
         await supabase
@@ -2056,7 +2066,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     if (visitToEdit.procedures.includes('Gydymas')) {
       const { data: treatmentRecords } = await supabase
         .from('treatments')
-        .select('*, treatment_medications(*)')
+        .select('*, usage_items(*)')
         .eq('visit_id', visitToEdit.id);
 
       if (treatmentRecords && treatmentRecords.length > 0) {
@@ -2103,20 +2113,20 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
           tests: treatment.tests || '',
           animal_condition: treatment.animal_condition || '',
           outcome: treatment.outcome || '',
-          outcome_date: treatment.outcome_date || '',
+          outcome_date: treatment.outcome_date ? treatment.outcome_date.split('T')[0] : '',
           services: treatment.services || '',
-          withdrawal_until: treatment.withdrawal_until || '',
+          withdrawal_until: treatment.withdrawal_until ? treatment.withdrawal_until.split('T')[0] : '',
           notes: treatment.notes || '',
           recurring_days: recurringDays,
           courseMedicationSchedule: courseMedicationSchedule.length > 0 ? courseMedicationSchedule : undefined,
-          medications: (treatment.treatment_medications || []).map((med: any) => ({
+          medications: (treatment.usage_items || []).map((med: any) => ({
             product_id: med.product_id,
             batch_id: med.batch_id,
             qty: med.qty?.toString() || '',
             unit: med.unit || 'ml',
             purpose: med.purpose || '',
-            is_course: med.is_course || false,
-            course_days: med.course_days?.toString() || '',
+            is_course: false,
+            course_days: '',
             teat: med.teat || '',
           })),
         });
@@ -2201,7 +2211,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
           disease_id: diseaseId,
           clinical_diagnosis: clinicalDiagnosis,
           tests: '',
-          animal_condition: '',
+          animal_condition: 'Patenkinama',
           outcome: '',
           services: '',
           withdrawal_until: '',
@@ -2306,17 +2316,19 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
   const loadResources = async () => {
     if (!selectedFarm) return;
 
-    const [diseasesRes, batchesRes, usersRes, hoofConditionsRes] = await Promise.all([
+    const [diseasesRes, batchesRes, usersRes, hoofConditionsRes, veterinariansRes] = await Promise.all([
       supabase.from('diseases').select('*').eq('farm_id', selectedFarm.id).order('name'),
       supabase.from('batches').select('*').eq('farm_id', selectedFarm.id).order('expiry_date'),
       supabase.from('users').select('id, full_name, email').eq('role', 'vet').order('full_name'),
       supabase.from('hoof_condition_codes').select('*').order('code'),
+      supabase.from('veterinarians').select('id, name').eq('is_active', true).order('name'),
     ]);
 
     if (diseasesRes.data) setDiseases(diseasesRes.data);
     if (batchesRes.data) setBatches(batchesRes.data);
     if (usersRes.data) setUsers(usersRes.data);
     if (hoofConditionsRes.data) setHoofConditions(hoofConditionsRes.data);
+    if (veterinariansRes.data) setVeterinarians(veterinariansRes.data);
 
     // Load products that have stock at this farm (from batches)
     // This ensures we show warehouse products that are allocated to this farm
@@ -2371,6 +2383,33 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
     } catch (error: any) {
       console.error('Error creating disease:', error);
       showNotification('Klaida kuriant ligą: ' + error.message, 'error');
+    }
+  };
+
+  const createVeterinarian = async () => {
+    if (!newVetName.trim()) {
+      showNotification('Įveskite veterinaro vardą', 'error');
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('veterinarians')
+        .insert({ name: newVetName.trim() })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setVeterinarians([...veterinarians, data]);
+      setFormData({ ...formData, veterinarian_id: data.id, vet_name: data.name });
+      setNewVetName('');
+      setShowVetCreate(false);
+
+      showNotification('Veterinaras sėkmingai sukurtas', 'success');
+    } catch (error: any) {
+      console.error('Error creating veterinarian:', error);
+      showNotification('Klaida kuriant veterinarą: ' + error.message, 'error');
     }
   };
 
@@ -2651,7 +2690,6 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
           if (treatmentToDelete?.id) {
             await returnStockToFarmBatches(treatmentToDelete.id);
             await supabase.from('usage_items').delete().eq('treatment_id', treatmentToDelete.id);
-            await supabase.from('treatment_medications').delete().eq('treatment_id', treatmentToDelete.id);
             await supabase.from('treatments').delete().eq('id', treatmentToDelete.id);
           }
         }
@@ -2775,6 +2813,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 outcome_date: treatmentData.outcome_date ? treatmentData.outcome_date : null,
                 services: treatmentData.services ? treatmentData.services : null,
                 vet_name: formData.vet_name ? formData.vet_name : null,
+                veterinarian_id: formData.veterinarian_id || null,
                 notes: treatmentData.notes ? treatmentData.notes : null,
                 creates_future_visits: hasRecurringDays,
                 sick_teats: sickTeats,
@@ -2793,7 +2832,6 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
             await returnStockToFarmBatches(existingTreatment.id);
             await supabase.from('usage_items').delete().eq('treatment_id', existingTreatment.id);
             await supabase.from('treatment_courses').delete().eq('treatment_id', existingTreatment.id);
-            await supabase.from('treatment_medications').delete().eq('treatment_id', existingTreatment.id);
           } else {
             console.log('➕ Creating new treatment for visit:', visitToEdit.id);
             // Create new treatment
@@ -2812,6 +2850,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 outcome_date: treatmentData.outcome_date ? treatmentData.outcome_date : null,
                 services: treatmentData.services ? treatmentData.services : null,
                 vet_name: formData.vet_name ? formData.vet_name : null,
+                veterinarian_id: formData.veterinarian_id || null,
                 notes: treatmentData.notes ? treatmentData.notes : null,
                 creates_future_visits: hasRecurringDays,
                 sick_teats: sickTeats,
@@ -3763,13 +3802,65 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Gydytojas
               </label>
-              <input
-                type="text"
-                value={formData.vet_name}
-                onChange={(e) => setFormData({ ...formData, vet_name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="Gydytojo vardas"
-              />
+              <div className="space-y-2">
+                <select
+                  value={formData.veterinarian_id}
+                  onChange={(e) => {
+                    const vetId = e.target.value;
+                    const vet = veterinarians.find(v => v.id === vetId);
+                    setFormData({ 
+                      ...formData, 
+                      veterinarian_id: vetId,
+                      vet_name: vet ? vet.name : formData.vet_name
+                    });
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Pasirinkite veterinarą...</option>
+                  {veterinarians.map(vet => (
+                    <option key={vet.id} value={vet.id}>{vet.name}</option>
+                  ))}
+                </select>
+                
+                {showVetCreate ? (
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newVetName}
+                      onChange={(e) => setNewVetName(e.target.value)}
+                      placeholder="Naujo veterinaro vardas"
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      onKeyDown={(e) => e.key === 'Enter' && createVeterinarian()}
+                    />
+                    <button
+                      type="button"
+                      onClick={createVeterinarian}
+                      className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                    >
+                      Sukurti
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowVetCreate(false);
+                        setNewVetName('');
+                      }}
+                      className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm"
+                    >
+                      Atšaukti
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowVetCreate(true)}
+                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Pridėti naują veterinarą
+                  </button>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3911,6 +4002,19 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Gyvūno būklė</label>
+                <select
+                  value={treatmentData.animal_condition || 'Patenkinama'}
+                  onChange={(e) => setTreatmentData({ ...treatmentData, animal_condition: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="Patenkinama">Patenkinama</option>
+                  <option value="Abejotina">Abejotina</option>
+                  <option value="Kliniškai sveikas">Kliniškai sveikas</option>
+                </select>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ligos baigtis</label>
@@ -3934,6 +4038,17 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                   />
                 </div>
+              </div>
+
+              {/* TEAT SELECTOR */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <h5 className="text-sm font-semibold text-gray-900 mb-2">Spenų būsena</h5>
+                <TeatSelector
+                  selectedSickTeats={sickTeats}
+                  selectedDisabledTeats={disabledTeats}
+                  onSickTeatsChange={setSickTeats}
+                  onDisabledTeatsChange={setDisabledTeats}
+                />
               </div>
 
               {/* SECTION 1: SINGLE-USE TREATMENT (TODAY ONLY) */}
@@ -4196,17 +4311,6 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                     </button>
                   </div>
                 )}
-              </div>
-
-              {/* TEAT SELECTOR */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <h5 className="text-sm font-semibold text-gray-900 mb-2">Spenų būsena</h5>
-                <TeatSelector
-                  selectedSickTeats={sickTeats}
-                  selectedDisabledTeats={disabledTeats}
-                  onSickTeatsChange={setSickTeats}
-                  onDisabledTeatsChange={setDisabledTeats}
-                />
               </div>
 
               <div>

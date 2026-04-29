@@ -163,15 +163,16 @@ export function AllFarmsReports() {
           if (filterAnimal) query = query.eq('animal_id', filterAnimal);
 
           const { data, error } = await query;
-          if (error) throw error;
+          if (error) {
+            console.error('❌ Error loading all farms withdrawal report:', error);
+            throw error;
+          }
 
           result = data || [];
           break;
         }
 
         case 'invoices': {
-          console.log('🔍 Loading invoices with filters:', { dateFrom, dateTo, filterFarm });
-          
           let query = supabase
             .from('invoices')
             .select(`
@@ -228,7 +229,6 @@ export function AllFarmsReports() {
             })
           );
 
-          console.log('✅ Final invoices with items:', invoicesWithItems.length);
           result = invoicesWithItems;
           break;
         }
