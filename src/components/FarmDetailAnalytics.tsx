@@ -68,6 +68,8 @@ interface AllocatedStockSummary {
   total_value: number;
   /** Remaining stock value at pre-discount unit price */
   remaining_value_before_discount: number;
+  /** Series/lot number for this batch */
+  series: string;
 }
 
 export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: FarmDetailProps) {
@@ -97,7 +99,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           warehouse_batches (
             purchase_price,
             received_qty,
-            invoice_id
+            invoice_id,
+            lot,
+            batch_number
           ),
           products (
             name,
@@ -129,6 +133,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           invoice_id,
           created_at,
           allocation_id,
+          lot,
+          batch_number,
           products (
             name,
             category,
@@ -193,7 +199,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       }
 
       if (allocationsData) {
-        // Group by product and calculate totals
+        // Group by product and series (each series gets its own row)
         const productMap = new Map<string, AllocatedStockSummary>();
 
         allocationsData.forEach(allocation => {
@@ -227,8 +233,14 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
           const lineDiscountAmount = (unitBeforeDiscount - unitAfterDiscount) * allocatedQty;
 
-          if (productMap.has(productName)) {
-            const existing = productMap.get(productName)!;
+          // Get series/lot number
+          const series = warehouseBatch.lot || warehouseBatch.batch_number || '';
+          
+          // Create unique key combining product name and series
+          const mapKey = `${productName}|||${series}`;
+
+          if (productMap.has(mapKey)) {
+            const existing = productMap.get(mapKey)!;
             existing.total_allocated_qty += allocatedQty;
             existing.total_used_qty += usedQty;
             existing.remaining_qty += qtyLeft;
@@ -247,7 +259,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           } else {
             // Default unit: 'vnt' for supplier_services, 'ml' for others
             const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
-            productMap.set(productName, {
+            productMap.set(mapKey, {
               product_name: productName,
               category: product.category || 'N/A',
               unit: product.primary_pack_unit || defaultUnit,
@@ -259,6 +271,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               total_discount: lineDiscountAmount,
               total_value: qtyLeft * unitAfterDiscount,
               remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
+              series: series || '',
             });
           }
         });
@@ -288,8 +301,14 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
             const lineDiscountAmount = (unitBeforeDiscount - unitAfterDiscount) * receivedQty;
 
-            if (productMap.has(productName)) {
-              const existing = productMap.get(productName)!;
+            // Get series/lot number
+            const series = batch.lot || batch.batch_number || '';
+            
+            // Create unique key combining product name and series
+            const mapKey = `${productName}|||${series}`;
+
+            if (productMap.has(mapKey)) {
+              const existing = productMap.get(mapKey)!;
               existing.total_allocated_qty += receivedQty;
               existing.total_used_qty += usedQty;
               existing.remaining_qty += qtyLeft;
@@ -308,7 +327,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             } else {
               // Default unit: 'vnt' for supplier_services, 'ml' for others
               const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
-              productMap.set(productName, {
+              productMap.set(mapKey, {
                 product_name: productName,
                 category: product.category || 'N/A',
                 unit: product.primary_pack_unit || defaultUnit,
@@ -320,6 +339,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                 total_discount: lineDiscountAmount,
                 total_value: qtyLeft * unitAfterDiscount,
                 remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
+                series: series || '',
               });
             }
           });
@@ -349,6 +369,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       ? allocatedStock.map(item => ({
           'Produktas': item.product_name,
           'Kategorija': translateCategory(item.category),
+          'Serija': item.series || '-',
           'Paskirstyta': item.total_allocated_qty,
           'Sunaudota': item.total_used_qty,
           'Vienetas': item.unit,
@@ -360,6 +381,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         }))
       : allocatedStock.map(item => ({
           'Vaistas': item.product_name,
+          'Serija': item.series || '-',
           'Kiekis': item.total_allocated_qty.toFixed(2) + ' ' + item.unit,
           'Kaina': '€' + item.avg_price_before_discount.toFixed(4),
           'Bendra suma': '€' + (item.total_allocated_qty * item.avg_price_before_discount).toFixed(2)
@@ -374,6 +396,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Produktas': '',
         'Kategorija': '',
+        'Serija': '',
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
@@ -387,6 +410,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Produktas': '',
         'Kategorija': '',
+        'Serija': '',
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
@@ -400,6 +424,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Produktas': '',
         'Kategorija': '',
+        'Serija': '',
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
@@ -413,6 +438,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Produktas': '',
         'Kategorija': '',
+        'Serija': '',
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
@@ -426,6 +452,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       exportData.push({
         'Produktas': '',
         'Kategorija': '',
+        'Serija': '',
         'Paskirstyta': '',
         'Sunaudota': '',
         'Vienetas': '',
@@ -445,6 +472,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
       exportData.push({
         'Vaistas': '',
+        'Serija': '',
         'Kiekis': '',
         'Kaina': 'Tarpinė suma (be PVM):',
         'Bendra suma': '€' + subtotal.toFixed(2)
@@ -452,6 +480,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
       exportData.push({
         'Vaistas': '',
+        'Serija': '',
         'Kiekis': '',
         'Kaina': 'PVM (21%):',
         'Bendra suma': '€' + vat.toFixed(2)
@@ -459,6 +488,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
       exportData.push({
         'Vaistas': '',
+        'Serija': '',
         'Kiekis': '',
         'Kaina': 'IŠ VISO MOKĖTI (su PVM):',
         'Bendra suma': '€' + totalWithVat.toFixed(2)
@@ -489,6 +519,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       const tableData = allocatedStock.map(item => [
         toAscii(item.product_name),
         toAscii(translateCategory(item.category)),
+        toAscii(item.series || '-'),
         `${item.total_allocated_qty.toFixed(2)} ${item.unit}`,
         `${item.total_used_qty.toFixed(2)} ${item.unit}`,
         `EUR ${item.avg_price_before_discount.toFixed(4)}`,
@@ -506,31 +537,31 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
       // Add footer rows
       tableData.push([
-        { content: toAscii('Bendra nuolaida (paskirstyta):'), colSpan: 6, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: toAscii('Bendra nuolaida (paskirstyta):'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         { content: `- EUR ${totalDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [255, 243, 205] } } as any,
         '', ''
       ]);
 
       tableData.push([
-        { content: toAscii('Likutis bendra verte be nuolaidos:'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: toAscii('Likutis bendra verte be nuolaidos:'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         { content: `EUR ${totalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } } as any,
         ''
       ]);
 
       tableData.push([
-        { content: toAscii('Likutis bendra verte su nuolaida:'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: toAscii('Likutis bendra verte su nuolaida:'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         '',
         { content: `EUR ${totalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231] } } as any
       ]);
 
       tableData.push([
-        { content: 'PVM (21%):', colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: 'PVM (21%):', colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         '',
         { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [219, 234, 254] } } as any
       ]);
 
       tableData.push([
-        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right', fontSize: 10 } } as any,
+        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right', fontSize: 10 } } as any,
         '',
         { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231], fontSize: 10 } } as any
       ]);
@@ -540,6 +571,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         head: [[
           'Produktas',
           'Kategorija',
+          'Serija',
           'Paskirstyta',
           'Sunaudota',
           toAscii('Kaina'),
@@ -561,6 +593,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         
         return [
           toAscii(item.product_name),
+          toAscii(item.series || '-'),
           `${totalQty.toFixed(2)} ${item.unit}`,
           `EUR ${priceBeforeDiscount.toFixed(4)}`,
           `EUR ${totalPrice.toFixed(2)}`
@@ -574,17 +607,17 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       const totalWithVat = subtotal * 1.21;
 
       tableData.push([
-        { content: toAscii('Tarpine suma (be PVM):'), colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: toAscii('Tarpine suma (be PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         { content: `EUR ${subtotal.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
       ]);
       
       tableData.push([
-        { content: 'PVM (21%):', colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: 'PVM (21%):', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 230, 250] } } as any
       ]);
 
       tableData.push([
-        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 3, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
         { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 240, 220] } } as any
       ]);
 
@@ -592,6 +625,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         startY: 40,
         head: [[
           'Vaistas',
+          'Serija',
           'Kiekis',
           toAscii('Kaina'),
           'Bendra suma'
@@ -600,9 +634,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         styles: { fontSize: 9, cellPadding: 3 },
         headStyles: { fillColor: [200, 220, 240], fontStyle: 'bold', halign: 'center' },
         columnStyles: {
-          1: { halign: 'right' },
           2: { halign: 'right' },
-          3: { halign: 'right' }
+          3: { halign: 'right' },
+          4: { halign: 'right' }
         }
       });
     }
@@ -734,6 +768,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Produktas</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kategorija</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Serija</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Paskirstyta</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Sunaudota</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina</th>
@@ -751,6 +786,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                       <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
                         {translateCategory(item.category)}
                       </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {item.series || '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-right text-gray-900">
                       {item.total_allocated_qty.toFixed(2)} {item.unit}
@@ -778,7 +816,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               </tbody>
               <tfoot>
                 <tr className="bg-amber-50 border-t-2 border-amber-200">
-                  <td colSpan={6} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
                     Bendra nuolaida (paskirstyta):
                   </td>
                   <td className="px-4 py-3 text-sm font-bold text-amber-700 text-right">
@@ -788,7 +826,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   <td className="px-4 py-3"></td>
                 </tr>
                 <tr className="bg-slate-50 border-t border-slate-200">
-                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td colSpan={8} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
                     Likutis bendra vertė be nuolaidos:
                   </td>
                   <td className="px-4 py-3 text-sm font-bold text-slate-800 text-right">
@@ -797,7 +835,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   <td className="px-4 py-3"></td>
                 </tr>
                 <tr className="bg-gray-50 border-t border-gray-200">
-                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td colSpan={8} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
                     Likutis bendra vertė su nuolaida:
                   </td>
                   <td className="px-4 py-3"></td>
@@ -806,7 +844,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                 </tr>
                 <tr className="bg-blue-50 border-t-2 border-blue-300">
-                  <td colSpan={7} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                  <td colSpan={8} className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
                     PVM (21%):
                   </td>
                   <td className="px-4 py-3"></td>
@@ -815,7 +853,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-400">
-                  <td colSpan={7} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
+                  <td colSpan={8} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
                     IŠ VISO MOKĖTI (su PVM):
                   </td>
                   <td className="px-4 py-4"></td>
@@ -832,6 +870,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Vaistas</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Serija</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kiekis</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Bendra suma</th>
@@ -843,6 +882,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   return (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.series || '—'}
+                      </td>
                       <td className="px-4 py-3 text-sm text-right text-gray-900">
                         {item.total_allocated_qty.toFixed(2)} {item.unit}
                       </td>
@@ -858,7 +900,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               </tbody>
               <tfoot>
                 <tr className="bg-gray-50 border-t border-gray-200">
-                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
                     Tarpinė suma (be PVM):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
@@ -866,7 +908,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                 </tr>
                 <tr className="bg-blue-50 border-t border-blue-200">
-                  <td colSpan={3} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                  <td colSpan={4} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
                     PVM (21%):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-blue-700 text-right">
@@ -874,7 +916,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-300">
-                  <td colSpan={3} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
+                  <td colSpan={4} className="px-4 py-4 text-base font-bold text-gray-900 text-right">
                     IŠ VISO MOKĖTI (su PVM):
                   </td>
                   <td className="px-4 py-4 text-base font-bold text-green-700 text-right">

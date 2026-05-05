@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Plus, Edit2, Save, X, Building2, Phone, Mail, MapPin, Hash, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Edit2, Save, X, Building2, Phone, Mail, MapPin, Hash, CheckCircle, XCircle, Search } from 'lucide-react';
 import { useFarm } from '../contexts/FarmContext';
 
 interface Farm {
@@ -23,6 +23,7 @@ export function Farms() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const emptyFarm: Farm = {
     name: '',
@@ -153,6 +154,21 @@ export function Farms() {
     );
   }
 
+  // Filter farms based on search query
+  const filteredFarms = farms.filter(farm => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      farm.name.toLowerCase().includes(query) ||
+      farm.code.toLowerCase().includes(query) ||
+      (farm.address && farm.address.toLowerCase().includes(query)) ||
+      (farm.contact_person && farm.contact_person.toLowerCase().includes(query)) ||
+      (farm.contact_phone && farm.contact_phone.toLowerCase().includes(query)) ||
+      (farm.contact_email && farm.contact_email.toLowerCase().includes(query))
+    );
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -168,6 +184,37 @@ export function Farms() {
             <Plus className="w-5 h-5" />
             Pridėti ūkį
           </button>
+        )}
+      </div>
+
+      {/* Search Field */}
+      <div className="space-y-2">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Ieškoti pagal pavadinimą, kodą, adresą, kontaktus..."
+            className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+          {searchQuery && (
+            <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          )}
+        </div>
+        {searchQuery && (
+          <div className="text-sm text-gray-600">
+            Rasta ūkių: <span className="font-semibold">{filteredFarms.length}</span> iš {farms.length}
+          </div>
         )}
       </div>
 
@@ -329,7 +376,7 @@ export function Farms() {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {farms.map((farm) => (
+        {filteredFarms.map((farm) => (
           <div
             key={farm.id}
             className={`bg-white rounded-xl shadow-md border-2 p-6 transition-all ${
@@ -430,17 +477,33 @@ export function Farms() {
         ))}
       </div>
 
-      {farms.length === 0 && !showAdd && (
+      {filteredFarms.length === 0 && !showAdd && (
         <div className="text-center py-12 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
           <Building2 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-4">Nėra registruotų ūkių</p>
-          <button
-            onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <Plus className="w-5 h-5" />
-            Pridėti pirmą ūkį
-          </button>
+          {searchQuery ? (
+            <>
+              <p className="text-gray-600 mb-2">Nerasta ūkių pagal paieškos kriterijų</p>
+              <p className="text-sm text-gray-500 mb-4">Pabandykite pakeisti paieškos užklausą</p>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                <X className="w-5 h-5" />
+                Išvalyti paiešką
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-gray-600 mb-4">Nėra registruotų ūkių</p>
+              <button
+                onClick={() => setShowAdd(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                Pridėti pirmą ūkį
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
