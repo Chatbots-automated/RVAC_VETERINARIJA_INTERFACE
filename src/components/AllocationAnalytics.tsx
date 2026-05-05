@@ -121,13 +121,41 @@ export function AllocationAnalytics() {
         historyQuery = historyQuery.eq('farm_id', filterFarmId);
       }
 
-      const [farmsRes, productsRes, historyRes] = await Promise.all([
+      const [farmsRes, productsRes, historyRes, allFarmsRes] = await Promise.all([
         supabase.from('vw_allocation_analytics_by_farm').select('*').order('total_value_allocated', { ascending: false, nullsFirst: false }),
         supabase.from('vw_allocation_analytics_by_product').select('*').order('total_qty_allocated', { ascending: false, nullsFirst: false }),
         historyQuery,
+        supabase.from('farms').select('id, name, code').order('name'),
       ]);
 
-      if (farmsRes.data) setFarmAnalytics(farmsRes.data);
+      console.log('Farm analytics loaded:', {
+        totalFarms: farmsRes.data?.length || 0,
+        totalFarmsInDB: allFarmsRes.data?.length || 0,
+        farms: farmsRes.data,
+        dromantas: farmsRes.data?.find(f => f.farm_name?.toLowerCase().includes('dromantas')),
+        dromantasInDB: allFarmsRes.data?.find(f => f.name?.toLowerCase().includes('dromantas'))
+      });
+
+      // Merge analytics with all farms to show farms even with 0 allocations
+      if (allFarmsRes.data) {
+        const analyticsMap = new Map((farmsRes.data || []).map(f => [f.farm_id, f]));
+        const mergedFarms = allFarmsRes.data.map(farm => {
+          const analytics = analyticsMap.get(farm.id);
+          return analytics || {
+            farm_id: farm.id,
+            farm_name: farm.name,
+            farm_code: farm.code,
+            total_allocations: 0,
+            unique_products: 0,
+            total_qty_allocated: 0,
+            total_value_allocated: 0,
+            total_value_allocated_before_discount: 0,
+            last_allocation_date: null
+          };
+        }).sort((a, b) => (b.total_value_allocated || 0) - (a.total_value_allocated || 0));
+        
+        setFarmAnalytics(mergedFarms);
+      }
       if (productsRes.data) setProductAnalytics(productsRes.data);
       if (historyRes.data) setAllocationHistory(historyRes.data);
     } catch (error) {

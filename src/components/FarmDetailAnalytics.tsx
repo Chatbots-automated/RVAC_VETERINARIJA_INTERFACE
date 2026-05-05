@@ -120,8 +120,41 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         console.error('Error loading allocations:', allocError);
         throw allocError;
       }
+      
+      console.log('Loaded allocations for farm:', { 
+        farmId, 
+        count: allocationsData?.length || 0,
+        allocations: allocationsData 
+      });
 
-      // Load directly assigned batches (from invoices assigned directly to this farm)
+      // Also check raw allocations without joins to see if data exists
+      const { data: rawAllocations } = await supabase
+        .from('farm_stock_allocations')
+        .select('id, product_id, warehouse_batch_id, allocated_qty')
+        .eq('farm_id', farmId);
+      
+      console.log('Raw allocations (no joins):', {
+        count: rawAllocations?.length || 0,
+        allocations: rawAllocations
+      });
+
+      // Check if warehouse batches exist for these allocation IDs
+      if (rawAllocations && rawAllocations.length > 0) {
+        const warehouseBatchIds = rawAllocations.map(a => a.warehouse_batch_id).filter(Boolean);
+        const { data: warehouseBatches } = await supabase
+          .from('warehouse_batches')
+          .select('id, lot, batch_number, purchase_price')
+          .in('id', warehouseBatchIds);
+        
+        console.log('Warehouse batches check:', {
+          expectedCount: warehouseBatchIds.length,
+          foundCount: warehouseBatches?.length || 0,
+          missingBatches: warehouseBatchIds.filter(id => !warehouseBatches?.find(b => b.id === id))
+        });
+      }
+
+      // Load batches: either from direct invoices OR orphaned warehouse allocations
+      // (batches with allocation_id but no matching farm_stock_allocation record)
       let directBatchQuery = supabase
         .from('batches')
         .select(`
@@ -141,8 +174,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             primary_pack_unit
           )
         `)
-        .eq('farm_id', farmId)
-        .not('invoice_id', 'is', null);
+        .eq('farm_id', farmId);
 
       if (dateFrom) directBatchQuery = directBatchQuery.gte('created_at', dateFrom);
       if (dateTo) directBatchQuery = directBatchQuery.lte('created_at', dateTo + 'T23:59:59');
@@ -152,6 +184,20 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       if (directBatchError) {
         console.error('Error loading direct batches:', directBatchError);
       }
+
+      // Also check raw batches without the invoice filter
+      const { data: allBatches } = await supabase
+        .from('batches')
+        .select('id, product_id, invoice_id, allocation_id, received_qty, qty_left')
+        .eq('farm_id', farmId);
+      
+      console.log('All batches for farm (raw):', {
+        total: allBatches?.length || 0,
+        withInvoice: allBatches?.filter(b => b.invoice_id).length || 0,
+        withAllocation: allBatches?.filter(b => b.allocation_id).length || 0,
+        withoutEither: allBatches?.filter(b => !b.invoice_id && !b.allocation_id).length || 0,
+        batches: allBatches
+      });
 
       // Also get usage data for allocated stock (from warehouse)
       const { data: batchesData, error: batchError } = await supabase
@@ -181,7 +227,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         invoiceItemsData = data || [];
       }
 
-      // Get invoice items for directly assigned batches
+      // Get invoice items for farm batches (both direct invoices and orphaned allocations)
       const directBatchIds = [...new Set(directBatchesData?.map(b => b.id).filter(Boolean))];
       let directInvoiceItemsData: any[] = [];
       
@@ -196,6 +242,11 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         }
         
         directInvoiceItemsData = data || [];
+        
+        console.log('Invoice items for farm batches:', {
+          batchCount: directBatchIds.length,
+          invoiceItemsFound: directInvoiceItemsData.length
+        });
       }
 
       if (allocationsData) {
@@ -205,7 +256,16 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         allocationsData.forEach(allocation => {
           const product = allocation.products as any;
           const warehouseBatch = allocation.warehouse_batches as any;
-          if (!product || !warehouseBatch) return;
+          if (!product || !warehouseBatch) {
+            console.warn('Skipping allocation due to missing data:', {
+              allocation_id: allocation.id,
+              product_id: allocation.product_id,
+              warehouse_batch_id: allocation.warehouse_batch_id,
+              has_product: !!product,
+              has_warehouse_batch: !!warehouseBatch
+            });
+            return;
+          }
 
           const productName = product.name;
           const allocatedQty = parseFloat(allocation.allocated_qty) || 0;
@@ -276,11 +336,34 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           }
         });
 
-        // Process directly assigned batches (from invoices assigned directly to farm)
+        // Process all farm batches (direct invoices and orphaned warehouse allocations)
+        // Skip batches that were already processed via allocationsData
+        const processedAllocationIds = new Set(allocationsData?.map(a => a.id) || []);
+        
         if (directBatchesData) {
+          console.log('Processing farm batches:', { 
+            count: directBatchesData.length,
+            batches: directBatchesData,
+            alreadyProcessedCount: directBatchesData.filter(b => b.allocation_id && processedAllocationIds.has(b.allocation_id)).length
+          });
+          
           directBatchesData.forEach(batch => {
+            // Skip if this batch's allocation was already processed
+            if (batch.allocation_id && processedAllocationIds.has(batch.allocation_id)) {
+              console.log('Skipping batch - already processed via allocation:', batch.id);
+              return;
+            }
+            
             const product = batch.products as any;
-            if (!product) return;
+            if (!product) {
+              console.warn('Skipping batch due to missing product:', {
+                batch_id: batch.id,
+                product_id: batch.product_id,
+                has_allocation_id: !!batch.allocation_id,
+                has_invoice_id: !!batch.invoice_id
+              });
+              return;
+            }
 
             const productName = product.name;
             const receivedQty = parseFloat(batch.received_qty) || 0;
@@ -349,7 +432,13 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           row.remaining_value_before_discount = row.remaining_qty * row.avg_price_before_discount;
         });
 
-        setAllocatedStock(Array.from(productMap.values()).sort((a, b) => b.total_value - a.total_value));
+        const finalStock = Array.from(productMap.values()).sort((a, b) => b.total_value - a.total_value);
+        console.log('Final allocated stock:', {
+          count: finalStock.length,
+          items: finalStock
+        });
+        
+        setAllocatedStock(finalStock);
       }
     } catch (error) {
       console.error('Error loading farm data:', error);
