@@ -656,7 +656,7 @@ export function Treatment() {
                       <option value="g">g</option>
                       <option value="kg">kg</option>
                       <option value="vnt">vnt</option>
-                      <option value="tabletkė">tabletkė</option>
+                      <option value="tabletė">tabletė</option>
                       <option value="bolus">bolus</option>
                       <option value="syringe">syringe</option>
                     </select>

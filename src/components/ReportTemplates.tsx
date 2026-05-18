@@ -23,7 +23,7 @@ function toAscii(text: string | null | undefined): string {
 function translateUnit(unit: string): string {
   const translations: Record<string, string> = {
     'syringe': 'švirkštukas',
-    'tablet': 'tabletkė',
+    'tabletė': 'tabletė',
     'bolus': 'bolusas',
   };
   return translations[unit] || unit;

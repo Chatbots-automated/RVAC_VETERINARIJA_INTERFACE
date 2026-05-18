@@ -428,8 +428,8 @@ export function ReceiveStock() {
         primary_pack_size: newProductForm.primary_pack_size ? parseFloat(newProductForm.primary_pack_size) : null,
         package_weight_g: newProductForm.package_weight_g ? parseFloat(newProductForm.package_weight_g) : null,
         active_substance: newProductForm.active_substance || null,
-        withdrawal_days_meat: (['medicines', 'svirkstukai', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category) && newProductForm.withdrawal_days_meat) ? parseInt(newProductForm.withdrawal_days_meat) : null,
-        withdrawal_days_milk: (['medicines', 'svirkstukai', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category) && newProductForm.withdrawal_days_milk) ? parseInt(newProductForm.withdrawal_days_milk) : null,
+        withdrawal_days_meat: (['medicines', 'svirkstukai', 'tabletės', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category) && newProductForm.withdrawal_days_meat) ? parseInt(newProductForm.withdrawal_days_meat) : null,
+        withdrawal_days_milk: (['medicines', 'svirkstukai', 'tabletės', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category) && newProductForm.withdrawal_days_milk) ? parseInt(newProductForm.withdrawal_days_milk) : null,
         withdrawal_iv_meat: newProductForm.withdrawal_iv_meat ? parseInt(newProductForm.withdrawal_iv_meat) : null,
         withdrawal_iv_milk: newProductForm.withdrawal_iv_milk ? parseInt(newProductForm.withdrawal_iv_milk) : null,
         withdrawal_im_meat: newProductForm.withdrawal_im_meat ? parseInt(newProductForm.withdrawal_im_meat) : null,
@@ -1444,7 +1444,7 @@ export function ReceiveStock() {
                                   'g': 'g',
                                   'kg': 'kg',
                                   'vnt': 'vnt',
-                                  'tablet': 'tab',
+                                  'tabletė': 'tab',
                                   'bolus': 'bol',
                                   'syringe': 'švir'
                                 };
@@ -1686,6 +1686,7 @@ export function ReceiveStock() {
                       <option value="ovules">Ovulės</option>
                       <option value="vakcina">Vakcina</option>
                       <option value="bolusas">Bolusas</option>
+                      <option value="tabletės">Tabletės</option>
                       <option value="svirkstukai">Švirkštukai</option>
                       <option value="hygiene">Higiena</option>
                       <option value="biocide">Biocidas</option>
@@ -1767,7 +1768,7 @@ export function ReceiveStock() {
                       <option value="g">g</option>
                       <option value="kg">kg</option>
                       <option value="vnt">vnt</option>
-                      <option value="tabletkė">tabletkė</option>
+                      <option value="tabletė">tabletė</option>
                       <option value="bolus">bolus</option>
                       <option value="syringe">syringe</option>
                     </select>
@@ -1804,7 +1805,7 @@ export function ReceiveStock() {
                     </p>
                   </div>
 
-                  {(['medicines', 'svirkstukai', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category)) && (
+                  {(['medicines', 'svirkstukai', 'tabletės', 'prevention', 'ovules', 'vakcina'].includes(newProductForm.category)) && (
                     <>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -2144,6 +2145,7 @@ export function ReceiveStock() {
                         <option value="ovules">Ovulės</option>
                         <option value="vakcina">Vakcina</option>
                         <option value="bolusas">Bolusas</option>
+                        <option value="tabletės">Tabletės</option>
                         <option value="svirkstukai">Švirkštukai</option>
                         <option value="hygiene">Higiena</option>
                         <option value="biocide">Biocidas</option>
@@ -2226,7 +2228,7 @@ export function ReceiveStock() {
                         <option value="g">g</option>
                         <option value="kg">kg</option>
                         <option value="vnt">vnt</option>
-                        <option value="tabletkė">tabletkė</option>
+                        <option value="tabletė">tabletė</option>
                         <option value="bolus">bolus</option>
                         <option value="syringe">syringe</option>
                       </select>
@@ -2272,7 +2274,7 @@ export function ReceiveStock() {
                     </div>
 
                     {/* Route-specific withdrawal periods */}
-                    {(['medicines', 'svirkstukai', 'prevention', 'ovules', 'vakcina'].includes(manualProductForm.category)) && (
+                    {(['medicines', 'svirkstukai', 'tabletės', 'prevention', 'ovules', 'vakcina'].includes(manualProductForm.category)) && (
                       <div className="md:col-span-2 bg-gray-50 border border-gray-300 rounded-lg p-4">
                         <h4 className="text-sm font-bold text-gray-900 mb-3">Karencijos pagal būdą (dienomis)</h4>
                         <div className="grid grid-cols-2 gap-3">
@@ -2645,7 +2647,7 @@ export function ReceiveStock() {
                     'g': 'Gramo',
                     'kg': 'Kilogramo',
                     'vnt': 'Vieneto',
-                    'tablet': 'Tabletės',
+                    'tabletė': 'Tabletės',
                     'bolus': 'Boluso',
                     'syringe': 'Švirkšto'
                   };

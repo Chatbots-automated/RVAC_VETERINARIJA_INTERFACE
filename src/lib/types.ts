@@ -1,5 +1,5 @@
-export type ProductCategory = 'medicines' | 'prevention' | 'ovules' | 'vakcina' | 'reproduction' | 'treatment_materials' | 'hygiene' | 'biocide' | 'technical' | 'svirkstukai' | 'bolusas' | 'supplier_services';
-export type Unit = 'ml' | 'l' | 'g' | 'kg' | 'vnt' | 'pcs' | 'tabletkė' | 'bolus' | 'syringe';
+export type ProductCategory = 'medicines' | 'prevention' | 'ovules' | 'vakcina' | 'reproduction' | 'treatment_materials' | 'hygiene' | 'biocide' | 'technical' | 'svirkstukai' | 'bolusas' | 'tabletės' | 'supplier_services';
+export type Unit = 'ml' | 'l' | 'g' | 'kg' | 'vnt' | 'pcs' | 'tabletė' | 'bolus' | 'syringe';
 export type AdministrationRoute = 'iv' | 'im' | 'sc' | 'iu' | 'imm' | 'pos';
 
 export interface Product {

@@ -7571,6 +7571,7 @@ export type Database = {
         | "technical"
         | "svirkstukai"
         | "bolusas"
+        | "tabletės"
         | "vakcina"
       unit:
         | "ml"
@@ -7579,7 +7580,7 @@ export type Database = {
         | "kg"
         | "pcs"
         | "vnt"
-        | "tablet"
+        | "tabletė"
         | "bolus"
         | "syringe"
     }
@@ -7722,9 +7723,10 @@ export const Constants = {
         "technical",
         "svirkstukai",
         "bolusas",
+        "tabletės",
         "vakcina",
       ],
-      unit: ["ml", "l", "g", "kg", "pcs", "vnt", "tablet", "bolus", "syringe"],
+      unit: ["ml", "l", "g", "kg", "pcs", "vnt", "tabletė", "bolus", "syringe"],
     },
   },
 } as const
