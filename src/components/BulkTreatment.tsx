@@ -38,12 +38,14 @@ const AGE_GROUPS: AgeGroup[] = [
 
 export function BulkTreatment() {
   // Group products by category for easier selection
+  // "Vaistai" includes all medicine-related categories regardless of subcategory
   const getMedicineProducts = () => products.filter(p => 
     p.category === 'medicines' || 
     p.category === 'treatment_materials' || 
     p.category === 'svirkstukai' ||
     p.category === 'ovules' ||
-    p.category === 'bolusas'
+    p.category === 'bolusas' ||
+    p.category === 'tabletės'
   );
   const getVaccineProducts = () => products.filter(p => p.category === 'vakcina');
   const getPreventionProducts = () => products.filter(p => p.category === 'prevention');
@@ -132,7 +134,7 @@ export function BulkTreatment() {
         .from('products')
         .select('*')
         .in('id', productIds)
-        .in('category', ['medicines', 'prevention', 'vakcina', 'ovules']);
+        .in('category', ['medicines', 'treatment_materials', 'svirkstukai', 'ovules', 'bolusas', 'tabletės', 'prevention', 'vakcina']);
       
       if (!productsError && productsData) {
         const sortedProducts = sortByLithuanian(productsData, 'name');
@@ -343,7 +345,8 @@ export function BulkTreatment() {
         m.category === 'treatment_materials' || 
         m.category === 'svirkstukai' ||
         m.category === 'ovules' ||
-        m.category === 'bolusas'
+        m.category === 'bolusas' ||
+        m.category === 'tabletės'
       );
       const vaccinations = validMedications.filter(m => m.category === 'vakcina');
       const preventions = validMedications.filter(m => m.category === 'prevention');
@@ -358,6 +361,11 @@ export function BulkTreatment() {
 
           // Handle treatments (medicines)
           if (treatments.length > 0) {
+            // Prepend notes to clinical diagnosis if notes exist
+            const clinicalDiagnosis = formData.notes 
+              ? `${formData.notes}\nMasinis gydymas`
+              : 'Masinis gydymas';
+            
             const { data: treatment, error: treatmentError } = await supabase
               .from('treatments')
               .insert({
@@ -367,7 +375,7 @@ export function BulkTreatment() {
                 vet_name: formData.vet_name,
                 veterinarian_id: formData.veterinarian_id || null,
                 notes: formData.notes,
-                clinical_diagnosis: 'Masinis gydymas',
+                clinical_diagnosis: clinicalDiagnosis,
                 animal_condition: formData.animal_condition,
               })
               .select()
@@ -398,6 +406,11 @@ export function BulkTreatment() {
 
         // Handle vaccinations - ALSO create treatment record so they show in reports
         if (vaccinations.length > 0) {
+          // Prepend notes to clinical diagnosis if notes exist
+          const vaccineDiagnosis = formData.notes 
+            ? `${formData.notes}\nMasinis gydymas (Vakcinos)`
+            : 'Masinis gydymas (Vakcinos)';
+          
           // Create treatment record for vaccines
           const { data: vaccineTreatment, error: vacTreatmentError } = await supabase
             .from('treatments')
@@ -407,7 +420,7 @@ export function BulkTreatment() {
               animal_id: animal.id,
               vet_name: formData.vet_name,
               notes: formData.notes,
-              clinical_diagnosis: 'Masinis gydymas (Vakcinos)',
+              clinical_diagnosis: vaccineDiagnosis,
               animal_condition: formData.animal_condition,
             })
             .select()
@@ -735,7 +748,8 @@ export function BulkTreatment() {
                 p.category === 'treatment_materials' || 
                 p.category === 'svirkstukai' ||
                 p.category === 'ovules' ||
-                p.category === 'bolusas'
+                p.category === 'bolusas' ||
+                p.category === 'tabletės'
               );
               const vaccineProducts = products.filter(p => p.category === 'vakcina');
               const preventionProducts = products.filter(p => p.category === 'prevention');
@@ -759,7 +773,8 @@ export function BulkTreatment() {
                            category === 'treatment_materials' || 
                            category === 'svirkstukai' ||
                            category === 'ovules' ||
-                           category === 'bolusas') ? 'treatment' : 
+                           category === 'bolusas' ||
+                           category === 'tabletės') ? 'treatment' : 
                           category === 'vakcina' ? 'vaccination' : 
                           'prevention'
                         );
@@ -789,7 +804,7 @@ export function BulkTreatment() {
                       {med.category === 'vakcina' && vaccineProducts.map(product => (
                         <option key={product.id} value={product.id}>{product.name}</option>
                       ))}
-                      {(med.category === 'prevention' || med.category === 'ovules') && preventionProducts.map(product => (
+                      {med.category === 'prevention' && preventionProducts.map(product => (
                         <option key={product.id} value={product.id}>{product.name}</option>
                       ))}
                     </select>

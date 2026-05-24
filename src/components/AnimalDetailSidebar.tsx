@@ -4101,7 +4101,8 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                                 p.category === 'treatment_materials' || 
                                 p.category === 'svirkstukai' ||
                                 p.category === 'ovules' ||
-                                p.category === 'bolusas'
+                                p.category === 'bolusas' ||
+                                p.category === 'tabletės'
                               ), 'name').map(product => (
                                 <option key={product.id} value={product.id}>{product.name}</option>
                               ))}
@@ -4444,7 +4445,7 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                         required
                       >
                         <option value="">Pasirinkite vakciną</option>
-                        {products.filter(p => p.category === 'prevention' || p.category === 'vakcina' || p.category === 'ovules').map(product => (
+                        {products.filter(p => p.category === 'vakcina').map(product => (
                           <option key={product.id} value={product.id}>{product.name}</option>
                         ))}
                       </select>
@@ -4626,11 +4627,8 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                         <option value="">Pasirinkite produktą</option>
                         {products.filter(p =>
                           p.category === 'prevention' ||
-                          p.category === 'ovules' ||
                           p.category === 'biocide' ||
-                          p.category === 'bolusas' ||
-                          p.category === 'hygiene' ||
-                          p.category === 'treatment_materials'
+                          p.category === 'hygiene'
                         ).map(prod => (
                           <option key={prod.id} value={prod.id}>{prod.name}</option>
                         ))}
