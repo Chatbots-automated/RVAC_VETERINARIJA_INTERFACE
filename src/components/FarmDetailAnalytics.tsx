@@ -249,6 +249,46 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         });
       }
 
+      // Get supplier_services items from farm invoices (these don't create batches)
+      let supplierServicesQuery = supabase
+        .from('invoice_items')
+        .select(`
+          id,
+          product_id,
+          quantity,
+          unit_price,
+          total_price,
+          discount_percent,
+          sku,
+          invoices!inner (
+            id,
+            farm_id,
+            invoice_date,
+            invoice_number
+          ),
+          products (
+            id,
+            name,
+            category,
+            primary_pack_unit
+          )
+        `)
+        .eq('invoices.farm_id', farmId);
+
+      if (dateFrom) supplierServicesQuery = supplierServicesQuery.gte('invoices.invoice_date', dateFrom);
+      if (dateTo) supplierServicesQuery = supplierServicesQuery.lte('invoices.invoice_date', dateTo);
+
+      const { data: supplierServicesData, error: supplierServicesError } = await supplierServicesQuery;
+      
+      if (supplierServicesError) {
+        console.error('Error loading supplier services items:', supplierServicesError);
+      }
+
+      console.log('Supplier services items for farm:', {
+        count: supplierServicesData?.length || 0,
+        items: supplierServicesData
+      });
+
       if (allocationsData) {
         // Group by product and series (each series gets its own row)
         const productMap = new Map<string, AllocatedStockSummary>();
@@ -423,6 +463,76 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                 total_value: qtyLeft * unitAfterDiscount,
                 remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
                 series: series || '',
+              });
+            }
+          });
+        }
+
+        // Process supplier_services items from direct farm invoices
+        if (supplierServicesData) {
+          console.log('Processing supplier services items:', supplierServicesData.length);
+          
+          supplierServicesData.forEach(item => {
+            const product = item.products as any;
+            const invoice = (item as any).invoices;
+            
+            if (!product || product.category !== 'supplier_services') {
+              return;
+            }
+
+            const productName = product.name;
+            const quantity = parseFloat(item.quantity) || 0;
+            const unitPrice = parseFloat(item.unit_price) || 0;
+            const totalPrice = parseFloat(item.total_price) || 0;
+            const discountPercent = item.discount_percent ? parseFloat(item.discount_percent) : 0;
+
+            // Calculate prices before and after discount
+            const unitBeforeDiscount = discountPercent > 0 
+              ? unitPrice / (1 - discountPercent / 100)
+              : unitPrice;
+            const totalBeforeDiscount = discountPercent > 0
+              ? totalPrice / (1 - discountPercent / 100)
+              : totalPrice;
+            
+            const discountAmount = totalBeforeDiscount - totalPrice;
+
+            // For supplier_services, we don't track usage, so allocated = remaining
+            // Use empty string for series since supplier_services typically don't have batches
+            const series = '';
+            const mapKey = `${productName}|||${series}`;
+
+            if (productMap.has(mapKey)) {
+              const existing = productMap.get(mapKey)!;
+              existing.total_allocated_qty += quantity;
+              existing.total_used_qty = 0; // Services aren't "used" in the traditional sense
+              existing.remaining_qty += quantity;
+              existing.total_discount += discountAmount;
+
+              const prevTotalQty = existing.total_allocated_qty - quantity;
+              existing.avg_purchase_price =
+                ((existing.avg_purchase_price * prevTotalQty) + (unitPrice * quantity)) /
+                existing.total_allocated_qty;
+              existing.avg_price_before_discount =
+                ((existing.avg_price_before_discount * prevTotalQty) + (unitBeforeDiscount * quantity)) /
+                existing.total_allocated_qty;
+              existing.total_value = existing.remaining_qty * existing.avg_purchase_price;
+              existing.remaining_value_before_discount =
+                existing.remaining_qty * existing.avg_price_before_discount;
+            } else {
+              const defaultUnit = product.primary_pack_unit || 'vnt';
+              productMap.set(mapKey, {
+                product_name: productName,
+                category: product.category || 'supplier_services',
+                unit: defaultUnit,
+                total_allocated_qty: quantity,
+                total_used_qty: 0,
+                remaining_qty: quantity,
+                avg_purchase_price: unitPrice,
+                avg_price_before_discount: unitBeforeDiscount,
+                total_discount: discountAmount,
+                total_value: totalPrice,
+                remaining_value_before_discount: totalBeforeDiscount,
+                series: series,
               });
             }
           });
