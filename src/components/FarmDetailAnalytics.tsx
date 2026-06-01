@@ -553,16 +553,16 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       } as any);
     } else if (!isDetailedView) {
       // Add summary rows for simple view
-      const subtotalWithDiscount = totalStockValue;
-      const vat = subtotalWithDiscount * 0.21;
-      const totalWithVat = subtotalWithDiscount * 1.21;
+      const subtotalBeforeDiscount = totalStockValueBeforeDiscount;
+      const vat = subtotalBeforeDiscount * 0.21;
+      const totalWithVat = subtotalBeforeDiscount * 1.21;
 
       exportData.push({
         'Vaistas': '',
         'Serija': '',
         'Kiekis': '',
         'Kaina': 'Tarpinė suma (be PVM):',
-        'Likutis be nuol.': '€' + subtotalWithDiscount.toFixed(2)
+        'Likutis be nuol.': '€' + subtotalBeforeDiscount.toFixed(2)
       } as any);
 
       exportData.push({
@@ -687,13 +687,13 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         ];
       });
 
-      const subtotalWithDiscount = totalStockValue;
-      const vat = subtotalWithDiscount * 0.21;
-      const totalWithVat = subtotalWithDiscount * 1.21;
+      const subtotalBeforeDiscount = totalStockValueBeforeDiscount;
+      const vat = subtotalBeforeDiscount * 0.21;
+      const totalWithVat = subtotalBeforeDiscount * 1.21;
 
       tableData.push([
         { content: toAscii('Tarpine suma (be PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${subtotalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
+        { content: `EUR ${subtotalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
       ]);
       
       tableData.push([
@@ -988,7 +988,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     Tarpinė suma (be PVM):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                    €{totalStockValue.toFixed(2)}
+                    €{totalStockValueBeforeDiscount.toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-blue-50 border-t border-blue-200">
@@ -996,7 +996,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     PVM (21%):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-blue-700 text-right">
-                    €{(totalStockValue * 0.21).toFixed(2)}
+                    €{(totalStockValueBeforeDiscount * 0.21).toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-300">
@@ -1004,7 +1004,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     IŠ VISO MOKĖTI (su PVM):
                   </td>
                   <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
-                    €{(totalStockValue * 1.21).toFixed(2)}
+                    €{(totalStockValueBeforeDiscount * 1.21).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>
