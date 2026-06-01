@@ -472,15 +472,15 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           'Vaistas': item.product_name,
           'Serija': item.series || '-',
           'Kiekis': item.total_allocated_qty.toFixed(2) + ' ' + item.unit,
-          'Kaina': '€' + item.avg_price_before_discount.toFixed(4),
-          'Bendra suma': '€' + (item.total_allocated_qty * item.avg_price_before_discount).toFixed(2)
+          'Kaina': '€' + item.avg_purchase_price.toFixed(4),
+          'Bendra suma': '€' + (item.total_allocated_qty * item.avg_purchase_price).toFixed(2)
         }));
 
     if (isDetailedView) {
       // Add summary rows for detailed view
       const totalDiscount = allocatedStock.reduce((sum, item) => sum + item.total_discount, 0);
-      const vat = totalStockValueBeforeDiscount * 0.21;
-      const totalWithVat = totalStockValueBeforeDiscount * 1.21;
+      const vat = totalStockValue * 0.21;
+      const totalWithVat = totalStockValue * 1.21;
 
       exportData.push({
         'Produktas': '',
@@ -554,7 +554,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
     } else if (!isDetailedView) {
       // Add summary rows for simple view
       const subtotal = allocatedStock.reduce((sum, item) => 
-        sum + (item.total_allocated_qty * item.avg_price_before_discount), 0
+        sum + (item.total_allocated_qty * item.avg_purchase_price), 0
       );
       const vat = subtotal * 0.21;
       const totalWithVat = subtotal * 1.21;
@@ -621,8 +621,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       const totalDiscount = allocatedStock.reduce((sum, item) => sum + item.total_discount, 0);
       const totalBeforeDiscount = totalStockValueBeforeDiscount;
       const totalWithDiscount = totalStockValue;
-      const vat = totalBeforeDiscount * 0.21;
-      const totalWithVat = totalBeforeDiscount * 1.21;
+      const vat = totalWithDiscount * 0.21;
+      const totalWithVat = totalWithDiscount * 1.21;
 
       // Add footer rows
       tableData.push([
@@ -677,20 +677,20 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       // Simple view PDF
       const tableData = allocatedStock.map(item => {
         const totalQty = item.total_allocated_qty;
-        const priceBeforeDiscount = item.avg_price_before_discount;
-        const totalPrice = totalQty * priceBeforeDiscount;
+        const priceAfterDiscount = item.avg_purchase_price;
+        const totalPrice = totalQty * priceAfterDiscount;
         
         return [
           toAscii(item.product_name),
           toAscii(item.series || '-'),
           `${totalQty.toFixed(2)} ${item.unit}`,
-          `EUR ${priceBeforeDiscount.toFixed(4)}`,
+          `EUR ${priceAfterDiscount.toFixed(4)}`,
           `EUR ${totalPrice.toFixed(2)}`
         ];
       });
 
       const subtotal = allocatedStock.reduce((sum, item) => 
-        sum + (item.total_allocated_qty * item.avg_price_before_discount), 0
+        sum + (item.total_allocated_qty * item.avg_purchase_price), 0
       );
       const vat = subtotal * 0.21;
       const totalWithVat = subtotal * 1.21;
@@ -938,7 +938,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                   <td className="px-4 py-3"></td>
                   <td className="px-4 py-3 text-sm font-bold text-blue-700 text-right">
-                    €{(totalStockValueBeforeDiscount * 0.21).toFixed(2)}
+                    €{(totalStockValue * 0.21).toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-400">
@@ -947,7 +947,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   </td>
                   <td className="px-4 py-4"></td>
                   <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
-                    €{(totalStockValueBeforeDiscount * 1.21).toFixed(2)}
+                    €{(totalStockValue * 1.21).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>
@@ -967,7 +967,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {allocatedStock.map((item, idx) => {
-                  const totalPrice = item.total_allocated_qty * item.avg_price_before_discount;
+                  const totalPrice = item.total_allocated_qty * item.avg_purchase_price;
                   return (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
@@ -978,7 +978,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                         {item.total_allocated_qty.toFixed(2)} {item.unit}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-gray-700">
-                        €{item.avg_price_before_discount.toFixed(4)}
+                        €{item.avg_purchase_price.toFixed(4)}
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
                         €{totalPrice.toFixed(2)}
@@ -993,7 +993,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     Tarpinė suma (be PVM):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                    €{allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0).toFixed(2)}
+                    €{allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0).toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-blue-50 border-t border-blue-200">
@@ -1001,7 +1001,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     PVM (21%):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-blue-700 text-right">
-                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0) * 0.21).toFixed(2)}
+                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0) * 0.21).toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-300">
@@ -1009,7 +1009,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     IŠ VISO MOKĖTI (su PVM):
                   </td>
                   <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
-                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_price_before_discount), 0) * 1.21).toFixed(2)}
+                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0) * 1.21).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>
