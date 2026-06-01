@@ -10,21 +10,8 @@ import {
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-// Helper to convert Lithuanian characters to ASCII for PDF
-function toAscii(text: string | null | undefined): string {
-  if (!text) return '';
-  return String(text)
-    .replace(/ą/g, 'a').replace(/Ą/g, 'A')
-    .replace(/č/g, 'c').replace(/Č/g, 'C')
-    .replace(/ę/g, 'e').replace(/Ę/g, 'E')
-    .replace(/ė/g, 'e').replace(/Ė/g, 'E')
-    .replace(/į/g, 'i').replace(/Į/g, 'I')
-    .replace(/š/g, 's').replace(/Š/g, 'S')
-    .replace(/ų/g, 'u').replace(/Ų/g, 'U')
-    .replace(/ū/g, 'u').replace(/Ū/g, 'U')
-    .replace(/ž/g, 'z').replace(/Ž/g, 'Z');
-}
+// Import properly converted font with Lithuanian character support
+import '../assets/fonts/Roboto-Regular-normal';
 
 // Helper to translate category names to Lithuanian
 function translateCategory(category: string | null | undefined): string {
@@ -700,30 +687,55 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
   const handleExportPDF = () => {
     const doc = new jsPDF('p', 'mm', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
     
+    // Set the properly converted Roboto font (already registered via import)
+    doc.setFont('Roboto-Regular', 'normal');
+    
+    // Company Header
+    doc.setFontSize(16);
+    doc.text('VET Praktika, UAB', pageWidth / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.text('Įmonės kodas: 307592187', pageWidth / 2, 21, { align: 'center' });
+    doc.text('PVM mokėtojo kodas: LT100019738210', pageWidth / 2, 26, { align: 'center' });
+    
+    // Draw separator line
+    doc.setLineWidth(0.5);
+    doc.line(20, 30, pageWidth - 20, 30);
+    
+    // Report Title
     doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(toAscii('PASKIRSTYTOS ATSARGOS'), doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    doc.text('PASKIRSTYTOS ATSARGOS', pageWidth / 2, 38, { align: 'center' });
     
+    // Farm Information Box
     doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(toAscii(`Ukis: ${farmName}`), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
-    doc.text(toAscii(`Kodas: ${farmCode}`), doc.internal.pageSize.getWidth() / 2, 28, { align: 'center' });
-    doc.text(toAscii(`Sugeneruota: ${new Date().toLocaleDateString('lt-LT')}`), doc.internal.pageSize.getWidth() / 2, 34, { align: 'center' });
+    doc.setDrawColor(200, 200, 200);
+    doc.setFillColor(245, 247, 250);
+    doc.roundedRect(20, 43, pageWidth - 40, 18, 2, 2, 'FD');
+    
+    doc.text('Ūkis:', 25, 50);
+    doc.text(farmName, 40, 50);
+    
+    doc.text('Kodas:', 25, 56);
+    doc.text(farmCode, 40, 56);
+    
+    doc.text('Data:', pageWidth - 60, 50);
+    doc.text(new Date().toLocaleDateString('lt-LT'), pageWidth - 45, 50);
 
     if (isDetailedView) {
       // Detailed view PDF
       const tableData = allocatedStock.map(item => [
-        toAscii(item.product_name),
-        toAscii(translateCategory(item.category)),
-        toAscii(item.series || '-'),
+        item.product_name,
+        translateCategory(item.category),
+        item.series || '-',
         `${item.total_allocated_qty.toFixed(2)} ${item.unit}`,
         `${item.total_used_qty.toFixed(2)} ${item.unit}`,
-        `EUR ${item.avg_price_before_discount.toFixed(4)}`,
-        `EUR ${item.avg_purchase_price.toFixed(4)}`,
-        item.total_discount > 0 ? `- EUR ${item.total_discount.toFixed(2)}` : '-',
-        `EUR ${item.remaining_value_before_discount.toFixed(2)}`,
-        `EUR ${item.total_value.toFixed(2)}`
+        `${item.avg_price_before_discount.toFixed(4)}`,
+        `${item.avg_purchase_price.toFixed(4)}`,
+        item.total_discount > 0 ? `${item.total_discount.toFixed(2)}` : '-',
+        `${item.remaining_value_before_discount.toFixed(2)}`,
+        `${item.total_value.toFixed(2)}`
       ]);
 
       const totalDiscount = allocatedStock.reduce((sum, item) => sum + item.total_discount, 0);
@@ -732,54 +744,96 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       const vat = totalWithDiscount * 0.21;
       const totalWithVat = totalWithDiscount * 1.21;
 
-      // Add footer rows
+      // Add spacing row
+      tableData.push(['', '', '', '', '', '', '', '', '', '']);
+
+      // Add footer rows with better styling
       tableData.push([
-        { content: toAscii('Bendra nuolaida (paskirstyta):'), colSpan: 7, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `- EUR ${totalDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [255, 243, 205] } } as any,
+        { content: 'Bendra nuolaida (paskirstyta):', colSpan: 7, styles: { fontStyle: 'normal', halign: 'right', fillColor: [255, 243, 205] } } as any,
+        { content: `EUR ${totalDiscount.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [255, 243, 205] } } as any,
         '', ''
       ]);
 
       tableData.push([
-        { content: toAscii('Likutis bendra verte be nuolaidos:'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${totalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [241, 245, 249] } } as any,
+        { content: 'Likutis bendra vertė be nuolaidos:', colSpan: 8, styles: { fontStyle: 'normal', halign: 'right', fillColor: [241, 245, 249] } } as any,
+        { content: `EUR ${totalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [241, 245, 249] } } as any,
         ''
       ]);
 
       tableData.push([
-        { content: toAscii('Likutis bendra verte su nuolaida:'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: 'Likutis bendra vertė su nuolaida:', colSpan: 8, styles: { fontStyle: 'normal', halign: 'right', fillColor: [220, 252, 231] } } as any,
         '',
-        { content: `EUR ${totalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231] } } as any
+        { content: `EUR ${totalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [220, 252, 231] } } as any
       ]);
 
       tableData.push([
-        { content: 'PVM (21%):', colSpan: 8, styles: { fontStyle: 'bold', halign: 'right' } } as any,
+        { content: 'PVM (21%):', colSpan: 8, styles: { fontStyle: 'normal', halign: 'right', fillColor: [219, 234, 254] } } as any,
         '',
-        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [219, 234, 254] } } as any
+        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [219, 234, 254] } } as any
       ]);
 
       tableData.push([
-        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 8, styles: { fontStyle: 'bold', halign: 'right', fontSize: 10 } } as any,
+        { content: 'IŠ VISO MOKĖTI (su PVM):', colSpan: 8, styles: { fontStyle: 'normal', halign: 'right', fontSize: 10, fillColor: [220, 252, 231] } } as any,
         '',
-        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 252, 231], fontSize: 10 } } as any
+        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fontSize: 10, fillColor: [220, 252, 231] } } as any
       ]);
 
       autoTable(doc, {
-        startY: 40,
+        startY: 67,
         head: [[
-          'Produktas',
-          'Kategorija',
-          'Serija',
-          'Paskirstyta',
-          'Sunaudota',
-          toAscii('Kaina'),
-          toAscii('Kaina (su nuol.)'),
-          'Nuolaida',
-          toAscii('Likutis be nuol.'),
-          toAscii('Likutis su nuol.')
+          { content: 'Produktas', styles: { halign: 'left' } },
+          { content: 'Kategorija', styles: { halign: 'center' } },
+          { content: 'Serija', styles: { halign: 'left' } },
+          { content: 'Paskirstyta', styles: { halign: 'right' } },
+          { content: 'Sunaudota', styles: { halign: 'right' } },
+          { content: 'Kaina', styles: { halign: 'right' } },
+          { content: 'Kaina (su nuol.)', styles: { halign: 'right' } },
+          { content: 'Nuolaida', styles: { halign: 'right' } },
+          { content: 'Likutis be nuol.', styles: { halign: 'right' } },
+          { content: 'Likutis su nuol.', styles: { halign: 'right' } }
         ]],
         body: tableData,
-        styles: { fontSize: 7, cellPadding: 2 },
-        headStyles: { fillColor: [200, 220, 240], fontStyle: 'bold', halign: 'center' }
+        styles: { 
+          fontSize: 7, 
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          font: 'Roboto-Regular',
+          fontStyle: 'normal'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: 255,
+          fontSize: 7,
+          font: 'Roboto-Regular',
+          fontStyle: 'normal'
+        },
+        columnStyles: {
+          3: { halign: 'right' },
+          4: { halign: 'right' },
+          5: { halign: 'right' },
+          6: { halign: 'right' },
+          7: { halign: 'right' },
+          8: { halign: 'right' },
+          9: { halign: 'right' }
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        margin: { left: 10, right: 10 },
+        didDrawPage: function (data) {
+          // Footer
+          const pageHeight = doc.internal.pageSize.getHeight();
+          doc.setFont('Roboto-Regular', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(128);
+          doc.text(
+            `Dokumentas sugeneruotas: ${new Date().toLocaleDateString('lt-LT')} ${new Date().toLocaleTimeString('lt-LT')}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+          );
+        }
       });
     } else {
       // Simple view PDF
@@ -789,11 +843,11 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         const remainingValueBeforeDiscount = item.remaining_value_before_discount;
         
         return [
-          toAscii(item.product_name),
-          toAscii(item.series || '-'),
+          item.product_name,
+          item.series || '-',
           `${totalQty.toFixed(2)} ${item.unit}`,
-          `EUR ${priceBeforeDiscount.toFixed(4)}`,
-          `EUR ${remainingValueBeforeDiscount.toFixed(2)}`
+          `${priceBeforeDiscount.toFixed(4)}`,
+          `${remainingValueBeforeDiscount.toFixed(2)}`
         ];
       });
 
@@ -801,37 +855,73 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       const vat = subtotalBeforeDiscount * 0.21;
       const totalWithVat = subtotalBeforeDiscount * 1.21;
 
+      // Add spacing row
+      tableData.push(['', '', '', '', '']);
+
+      // Add summary rows with better styling
       tableData.push([
-        { content: toAscii('Tarpine suma (be PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${subtotalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
+        { content: 'Tarpinė suma (be PVM):', colSpan: 4, styles: { fontStyle: 'normal', halign: 'right', fillColor: [245, 247, 250] } } as any,
+        { content: `EUR ${subtotalBeforeDiscount.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [245, 247, 250] } } as any
       ]);
       
       tableData.push([
-        { content: 'PVM (21%):', colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 230, 250] } } as any
+        { content: 'PVM (21%):', colSpan: 4, styles: { fontStyle: 'normal', halign: 'right', fillColor: [219, 234, 254] } } as any,
+        { content: `EUR ${vat.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fillColor: [219, 234, 254] } } as any
       ]);
 
       tableData.push([
-        { content: toAscii('IS VISO MOKETI (su PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'bold', fillColor: [220, 240, 220] } } as any
+        { content: 'IŠ VISO MOKĖTI (su PVM):', colSpan: 4, styles: { fontStyle: 'normal', halign: 'right', fontSize: 11, fillColor: [220, 252, 231] } } as any,
+        { content: `EUR ${totalWithVat.toFixed(2)}`, styles: { fontStyle: 'normal', halign: 'right', fontSize: 11, fillColor: [220, 252, 231] } } as any
       ]);
 
       autoTable(doc, {
-        startY: 40,
+        startY: 67,
         head: [[
-          'Vaistas',
-          'Serija',
-          'Kiekis',
-          toAscii('Kaina'),
-          toAscii('Likutis be nuol.')
+          { content: 'Produktas', styles: { halign: 'left' } },
+          { content: 'Serija', styles: { halign: 'left' } },
+          { content: 'Kiekis', styles: { halign: 'right' } },
+          { content: 'Kaina (EUR)', styles: { halign: 'right' } },
+          { content: 'Vertė (EUR)', styles: { halign: 'right' } }
         ]],
         body: tableData,
-        styles: { fontSize: 9, cellPadding: 3 },
-        headStyles: { fillColor: [200, 220, 240], fontStyle: 'bold', halign: 'center' },
+        styles: { 
+          fontSize: 10, 
+          cellPadding: 4,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          font: 'Roboto-Regular',
+          fontStyle: 'normal'
+        },
+        headStyles: { 
+          fillColor: [59, 130, 246],
+          textColor: 255,
+          fontSize: 10,
+          font: 'Roboto-Regular',
+          fontStyle: 'normal'
+        },
         columnStyles: {
-          2: { halign: 'right' },
-          3: { halign: 'right' },
-          4: { halign: 'right' }
+          0: { cellWidth: 70 },
+          1: { cellWidth: 35, halign: 'left' },
+          2: { cellWidth: 30, halign: 'right' },
+          3: { cellWidth: 25, halign: 'right' },
+          4: { cellWidth: 30, halign: 'right' }
+        },
+        alternateRowStyles: {
+          fillColor: [249, 250, 251]
+        },
+        margin: { left: 20, right: 20 },
+        didDrawPage: function (data) {
+          // Footer
+          const pageHeight = doc.internal.pageSize.getHeight();
+          doc.setFont('Roboto-Regular', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(128);
+          doc.text(
+            `Dokumentas sugeneruotas: ${new Date().toLocaleDateString('lt-LT')} ${new Date().toLocaleTimeString('lt-LT')}`,
+            pageWidth / 2,
+            pageHeight - 10,
+            { align: 'center' }
+          );
         }
       });
     }
