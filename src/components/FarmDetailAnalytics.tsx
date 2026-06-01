@@ -472,8 +472,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           'Vaistas': item.product_name,
           'Serija': item.series || '-',
           'Kiekis': item.total_allocated_qty.toFixed(2) + ' ' + item.unit,
-          'Kaina': '€' + item.avg_purchase_price.toFixed(4),
-          'Bendra suma': '€' + (item.total_allocated_qty * item.avg_purchase_price).toFixed(2)
+          'Kaina': '€' + item.avg_price_before_discount.toFixed(4),
+          'Likutis be nuol.': '€' + item.remaining_value_before_discount.toFixed(2)
         }));
 
     if (isDetailedView) {
@@ -553,18 +553,16 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       } as any);
     } else if (!isDetailedView) {
       // Add summary rows for simple view
-      const subtotal = allocatedStock.reduce((sum, item) => 
-        sum + (item.total_allocated_qty * item.avg_purchase_price), 0
-      );
-      const vat = subtotal * 0.21;
-      const totalWithVat = subtotal * 1.21;
+      const subtotalWithDiscount = totalStockValue;
+      const vat = subtotalWithDiscount * 0.21;
+      const totalWithVat = subtotalWithDiscount * 1.21;
 
       exportData.push({
         'Vaistas': '',
         'Serija': '',
         'Kiekis': '',
         'Kaina': 'Tarpinė suma (be PVM):',
-        'Bendra suma': '€' + subtotal.toFixed(2)
+        'Likutis be nuol.': '€' + subtotalWithDiscount.toFixed(2)
       } as any);
 
       exportData.push({
@@ -572,7 +570,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Serija': '',
         'Kiekis': '',
         'Kaina': 'PVM (21%):',
-        'Bendra suma': '€' + vat.toFixed(2)
+        'Likutis be nuol.': '€' + vat.toFixed(2)
       } as any);
 
       exportData.push({
@@ -580,7 +578,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         'Serija': '',
         'Kiekis': '',
         'Kaina': 'IŠ VISO MOKĖTI (su PVM):',
-        'Bendra suma': '€' + totalWithVat.toFixed(2)
+        'Likutis be nuol.': '€' + totalWithVat.toFixed(2)
       } as any);
     }
 
@@ -677,27 +675,25 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       // Simple view PDF
       const tableData = allocatedStock.map(item => {
         const totalQty = item.total_allocated_qty;
-        const priceAfterDiscount = item.avg_purchase_price;
-        const totalPrice = totalQty * priceAfterDiscount;
+        const priceBeforeDiscount = item.avg_price_before_discount;
+        const remainingValueBeforeDiscount = item.remaining_value_before_discount;
         
         return [
           toAscii(item.product_name),
           toAscii(item.series || '-'),
           `${totalQty.toFixed(2)} ${item.unit}`,
-          `EUR ${priceAfterDiscount.toFixed(4)}`,
-          `EUR ${totalPrice.toFixed(2)}`
+          `EUR ${priceBeforeDiscount.toFixed(4)}`,
+          `EUR ${remainingValueBeforeDiscount.toFixed(2)}`
         ];
       });
 
-      const subtotal = allocatedStock.reduce((sum, item) => 
-        sum + (item.total_allocated_qty * item.avg_purchase_price), 0
-      );
-      const vat = subtotal * 0.21;
-      const totalWithVat = subtotal * 1.21;
+      const subtotalWithDiscount = totalStockValue;
+      const vat = subtotalWithDiscount * 0.21;
+      const totalWithVat = subtotalWithDiscount * 1.21;
 
       tableData.push([
         { content: toAscii('Tarpine suma (be PVM):'), colSpan: 4, styles: { fontStyle: 'bold', halign: 'right' } } as any,
-        { content: `EUR ${subtotal.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
+        { content: `EUR ${subtotalWithDiscount.toFixed(2)}`, styles: { fontStyle: 'bold' } } as any
       ]);
       
       tableData.push([
@@ -717,7 +713,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           'Serija',
           'Kiekis',
           toAscii('Kaina'),
-          'Bendra suma'
+          toAscii('Likutis be nuol.')
         ]],
         body: tableData,
         styles: { fontSize: 9, cellPadding: 3 },
@@ -962,12 +958,11 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Serija</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kiekis</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Kaina</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Bendra suma</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase">Likutis be nuol.</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {allocatedStock.map((item, idx) => {
-                  const totalPrice = item.total_allocated_qty * item.avg_purchase_price;
                   return (
                     <tr key={idx} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.product_name}</td>
@@ -978,10 +973,10 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                         {item.total_allocated_qty.toFixed(2)} {item.unit}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-gray-700">
-                        €{item.avg_purchase_price.toFixed(4)}
+                        €{item.avg_price_before_discount.toFixed(4)}
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-bold text-gray-900">
-                        €{totalPrice.toFixed(2)}
+                        €{item.remaining_value_before_discount.toFixed(2)}
                       </td>
                     </tr>
                   );
@@ -993,7 +988,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     Tarpinė suma (be PVM):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
-                    €{allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0).toFixed(2)}
+                    €{totalStockValue.toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-blue-50 border-t border-blue-200">
@@ -1001,7 +996,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     PVM (21%):
                   </td>
                   <td className="px-4 py-3 text-sm font-semibold text-blue-700 text-right">
-                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0) * 0.21).toFixed(2)}
+                    €{(totalStockValue * 0.21).toFixed(2)}
                   </td>
                 </tr>
                 <tr className="bg-green-50 border-t-2 border-green-300">
@@ -1009,7 +1004,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                     IŠ VISO MOKĖTI (su PVM):
                   </td>
                   <td className="px-4 py-4 text-base font-bold text-green-700 text-right">
-                    €{(allocatedStock.reduce((sum, item) => sum + (item.total_allocated_qty * item.avg_purchase_price), 0) * 1.21).toFixed(2)}
+                    €{(totalStockValue * 1.21).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>
