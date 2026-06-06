@@ -9,8 +9,6 @@ interface Farm {
   contact_person?: string;
   contact_phone?: string;
   contact_email?: string;
-  vic_username?: string;
-  vic_password?: string;
   is_active: boolean;
 }
 

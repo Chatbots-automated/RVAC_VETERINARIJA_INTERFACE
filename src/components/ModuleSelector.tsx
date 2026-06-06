@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Stethoscope, Euro, Package, Shield, LogOut, Building2, Warehouse, StickyNote, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Notepad from './Notepad';
+import { VICCredentials } from './VICCredentials';
 
 interface ModuleSelectorProps {
   onSelectModule: (module: 'veterinarija' | 'klientai' | 'vetpraktika') => void;
@@ -13,6 +14,7 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
   const [hasNotepadContent, setHasNotepadContent] = useState(false);
   const [notepadPreview, setNotepadPreview] = useState('');
   const [showPreview, setShowPreview] = useState(true);
+  const [isVICModalOpen, setIsVICModalOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -233,13 +235,22 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
               <p className="text-sm text-gray-500">Prisijungęs kaip</p>
               <p className="font-medium">{user?.email}</p>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Atsijungti</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsVICModalOpen(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
+              >
+                <Shield className="w-5 h-5" />
+                <span>VIC duomenys</span>
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-white transition-colors"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Atsijungti</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -251,6 +262,12 @@ export function ModuleSelector({ onSelectModule }: ModuleSelectorProps) {
         farmId={null}
         onHasContent={setHasNotepadContent}
         onContentPreview={setNotepadPreview}
+      />
+
+      {/* VIC Credentials Modal */}
+      <VICCredentials
+        isOpen={isVICModalOpen}
+        onClose={() => setIsVICModalOpen(false)}
       />
 
       {/* Notepad Preview Banner */}

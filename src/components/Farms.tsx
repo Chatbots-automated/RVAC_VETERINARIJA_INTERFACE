@@ -11,8 +11,6 @@ interface Farm {
   contact_person?: string;
   contact_phone?: string;
   contact_email?: string;
-  vic_username?: string;
-  vic_password?: string;
   is_active: boolean;
   is_eco_farm?: boolean;
 }
@@ -32,8 +30,6 @@ export function Farms() {
     contact_person: '',
     contact_phone: '',
     contact_email: '',
-    vic_username: '',
-    vic_password: '',
     is_active: true,
     is_eco_farm: false,
   };
@@ -78,8 +74,6 @@ export function Farms() {
             contact_person: formData.contact_person || null,
             contact_phone: formData.contact_phone || null,
             contact_email: formData.contact_email || null,
-            vic_username: formData.vic_username || null,
-            vic_password: formData.vic_password || null,
             is_active: formData.is_active,
             is_eco_farm: formData.is_eco_farm || false,
           })
@@ -97,8 +91,6 @@ export function Farms() {
             contact_person: formData.contact_person || null,
             contact_phone: formData.contact_phone || null,
             contact_email: formData.contact_email || null,
-            vic_username: formData.vic_username || null,
-            vic_password: formData.vic_password || null,
             is_active: formData.is_active,
             is_eco_farm: formData.is_eco_farm || false,
           }]);
@@ -300,37 +292,6 @@ export function Farms() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="kontaktas@ukis.lt"
               />
-            </div>
-
-            <div className="md:col-span-2 border-t border-gray-200 pt-4 mt-2">
-              <h4 className="text-sm font-semibold text-gray-900 mb-3">VIC Duomenys (Veterinarijos informacijos centras)</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    VIC Vartotojo vardas
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.vic_username || ''}
-                    onChange={(e) => setFormData({ ...formData, vic_username: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="VIC username"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    VIC Slaptažodis
-                  </label>
-                  <input
-                    type="password"
-                    value={formData.vic_password || ''}
-                    onChange={(e) => setFormData({ ...formData, vic_password: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="VIC password"
-                  />
-                </div>
-              </div>
             </div>
 
             <div className="flex flex-col gap-3">
