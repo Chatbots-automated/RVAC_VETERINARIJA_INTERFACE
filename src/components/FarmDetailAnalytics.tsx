@@ -340,9 +340,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             existing.avg_price_before_discount =
               ((existing.avg_price_before_discount * prevTotalQty) + (unitBeforeDiscount * allocatedQty)) /
               existing.total_allocated_qty;
-            existing.total_value = existing.remaining_qty * existing.avg_purchase_price;
+            existing.total_value = existing.total_allocated_qty * existing.avg_purchase_price;
             existing.remaining_value_before_discount =
-              existing.remaining_qty * existing.avg_price_before_discount;
+              existing.total_allocated_qty * existing.avg_price_before_discount;
           } else {
             // Default unit: 'vnt' for supplier_services, 'ml' for others
             const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
@@ -356,8 +356,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               avg_purchase_price: unitAfterDiscount,
               avg_price_before_discount: unitBeforeDiscount,
               total_discount: lineDiscountAmount,
-              total_value: qtyLeft * unitAfterDiscount,
-              remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
+              total_value: allocatedQty * unitAfterDiscount,
+              remaining_value_before_discount: allocatedQty * unitBeforeDiscount,
               series: series || '',
             });
           }
@@ -431,9 +431,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               existing.avg_price_before_discount =
                 ((existing.avg_price_before_discount * prevTotalQty) + (unitBeforeDiscount * receivedQty)) /
                 existing.total_allocated_qty;
-              existing.total_value = existing.remaining_qty * existing.avg_purchase_price;
+              existing.total_value = existing.total_allocated_qty * existing.avg_purchase_price;
               existing.remaining_value_before_discount =
-                existing.remaining_qty * existing.avg_price_before_discount;
+                existing.total_allocated_qty * existing.avg_price_before_discount;
             } else {
               // Default unit: 'vnt' for supplier_services, 'ml' for others
               const defaultUnit = product.category === 'supplier_services' ? 'vnt' : 'ml';
@@ -447,8 +447,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
                 avg_purchase_price: unitAfterDiscount,
                 avg_price_before_discount: unitBeforeDiscount,
                 total_discount: lineDiscountAmount,
-                total_value: qtyLeft * unitAfterDiscount,
-                remaining_value_before_discount: qtyLeft * unitBeforeDiscount,
+                total_value: receivedQty * unitAfterDiscount,
+                remaining_value_before_discount: receivedQty * unitBeforeDiscount,
                 series: series || '',
               });
             }
@@ -502,9 +502,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
               existing.avg_price_before_discount =
                 ((existing.avg_price_before_discount * prevTotalQty) + (unitBeforeDiscount * quantity)) /
                 existing.total_allocated_qty;
-              existing.total_value = existing.remaining_qty * existing.avg_purchase_price;
+              existing.total_value = existing.total_allocated_qty * existing.avg_purchase_price;
               existing.remaining_value_before_discount =
-                existing.remaining_qty * existing.avg_price_before_discount;
+                existing.total_allocated_qty * existing.avg_price_before_discount;
             } else {
               const defaultUnit = product.primary_pack_unit || 'vnt';
               productMap.set(mapKey, {
@@ -526,7 +526,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         }
 
         productMap.forEach((row) => {
-          row.remaining_value_before_discount = row.remaining_qty * row.avg_price_before_discount;
+          row.remaining_value_before_discount = row.total_allocated_qty * row.avg_price_before_discount;
         });
 
         const finalStock = Array.from(productMap.values()).sort((a, b) => b.total_value - a.total_value);
@@ -546,7 +546,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
 
   const totalStockValue = allocatedStock.reduce((sum, item) => sum + item.total_value, 0);
   const totalStockValueBeforeDiscount = allocatedStock.reduce(
-    (sum, item) => sum + item.remaining_qty * item.avg_price_before_discount,
+    (sum, item) => sum + item.total_allocated_qty * item.avg_price_before_discount,
     0
   );
 
