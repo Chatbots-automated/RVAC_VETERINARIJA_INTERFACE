@@ -74,6 +74,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
     try {
       setLoading(true);
 
+      console.log('Loading farm data with filters:', { farmId, dateFrom, dateTo });
+
       // Load allocated stock with warehouse batch prices and invoice items for discount info
       let query = supabase
         .from('farm_stock_allocations')
@@ -88,7 +90,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
             received_qty,
             invoice_id,
             lot,
-            batch_number
+            batch_number,
+            doc_date
           ),
           products (
             name,
@@ -98,8 +101,8 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         `)
         .eq('farm_id', farmId);
 
-      if (dateFrom) query = query.gte('created_at', dateFrom);
-      if (dateTo) query = query.lte('created_at', dateTo + 'T23:59:59');
+      // Note: We'll filter by warehouse_batches.doc_date (invoice date) in the processing logic
+      // since Supabase doesn't support filtering on nested fields directly
 
       const { data: allocationsData, error: allocError } = await query;
       
@@ -108,10 +111,35 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         throw allocError;
       }
       
+      // Filter allocations by invoice date (warehouse_batches.doc_date)
+      let filteredAllocationsData = allocationsData || [];
+      if (dateFrom || dateTo) {
+        filteredAllocationsData = filteredAllocationsData.filter(allocation => {
+          const warehouseBatch = allocation.warehouse_batches as any;
+          if (!warehouseBatch || !warehouseBatch.doc_date) return false;
+          
+          const docDate = warehouseBatch.doc_date;
+          
+          if (dateFrom && docDate < dateFrom) return false;
+          if (dateTo && docDate > dateTo) return false;
+          
+          return true;
+        });
+      }
+      
       console.log('Loaded allocations for farm:', { 
-        farmId, 
-        count: allocationsData?.length || 0,
-        allocations: allocationsData 
+        farmId,
+        dateFrom,
+        dateTo,
+        totalCount: allocationsData?.length || 0,
+        filteredCount: filteredAllocationsData.length,
+        allocations: filteredAllocationsData?.map(a => ({
+          id: a.id,
+          product_id: a.product_id,
+          created_at: a.created_at,
+          doc_date: (a.warehouse_batches as any)?.doc_date,
+          product_name: (a.products as any)?.name
+        }))
       });
 
       // Also check raw allocations without joins to see if data exists
@@ -140,8 +168,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         });
       }
 
-      // Load batches: either from direct invoices OR orphaned warehouse allocations
-      // (batches with allocation_id but no matching farm_stock_allocation record)
+      // Load batches with invoice data for date filtering
       let directBatchQuery = supabase
         .from('batches')
         .select(`
@@ -155,6 +182,9 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
           allocation_id,
           lot,
           batch_number,
+          invoices (
+            invoice_date
+          ),
           products (
             name,
             category,
@@ -163,14 +193,47 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         `)
         .eq('farm_id', farmId);
 
-      if (dateFrom) directBatchQuery = directBatchQuery.gte('created_at', dateFrom);
-      if (dateTo) directBatchQuery = directBatchQuery.lte('created_at', dateTo + 'T23:59:59');
+      // Note: We'll filter by invoices.invoice_date in the processing logic
+      // since we want to include batches without invoices when no filter is applied
 
       const { data: directBatchesData, error: directBatchError } = await directBatchQuery;
       
       if (directBatchError) {
         console.error('Error loading direct batches:', directBatchError);
       }
+
+      // Filter batches by invoice date
+      let filteredDirectBatchesData = directBatchesData || [];
+      if (dateFrom || dateTo) {
+        filteredDirectBatchesData = filteredDirectBatchesData.filter(batch => {
+          const invoice = batch.invoices as any;
+          if (!invoice || !invoice.invoice_date) return false; // Exclude if no invoice date when filter is applied
+          
+          const invoiceDate = invoice.invoice_date;
+          
+          if (dateFrom && invoiceDate < dateFrom) return false;
+          if (dateTo && invoiceDate > dateTo) return false;
+          
+          return true;
+        });
+      }
+
+      console.log('Loaded direct batches for farm:', {
+        farmId,
+        dateFrom,
+        dateTo,
+        totalCount: directBatchesData?.length || 0,
+        filteredCount: filteredDirectBatchesData.length,
+        batches: filteredDirectBatchesData?.map(b => ({
+          id: b.id,
+          product_id: b.product_id,
+          created_at: b.created_at,
+          invoice_date: (b.invoices as any)?.invoice_date,
+          product_name: (b.products as any)?.name,
+          invoice_id: b.invoice_id,
+          allocation_id: b.allocation_id
+        }))
+      });
 
       // Also check raw batches without the invoice filter
       const { data: allBatches } = await supabase
@@ -198,7 +261,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       }
 
       // Get invoice items with discount info using warehouse_batch_id
-      const warehouseBatchIds = [...new Set(allocationsData?.map(a => a.warehouse_batch_id).filter(Boolean))];
+      const warehouseBatchIds = [...new Set(filteredAllocationsData?.map(a => a.warehouse_batch_id).filter(Boolean))];
       let invoiceItemsData: any[] = [];
       
       if (warehouseBatchIds.length > 0) {
@@ -215,7 +278,7 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
       }
 
       // Get invoice items for farm batches (both direct invoices and orphaned allocations)
-      const directBatchIds = [...new Set(directBatchesData?.map(b => b.id).filter(Boolean))];
+      const directBatchIds = [...new Set(filteredDirectBatchesData?.map(b => b.id).filter(Boolean))];
       let directInvoiceItemsData: any[] = [];
       
       if (directBatchIds.length > 0) {
@@ -276,11 +339,11 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         items: supplierServicesData
       });
 
-      if (allocationsData) {
+      if (filteredAllocationsData) {
         // Group by product and series (each series gets its own row)
         const productMap = new Map<string, AllocatedStockSummary>();
 
-        allocationsData.forEach(allocation => {
+        filteredAllocationsData.forEach(allocation => {
           const product = allocation.products as any;
           const warehouseBatch = allocation.warehouse_batches as any;
           if (!product || !warehouseBatch) {
@@ -364,17 +427,17 @@ export function FarmDetailAnalytics({ farmId, farmName, farmCode, onBack }: Farm
         });
 
         // Process all farm batches (direct invoices and orphaned warehouse allocations)
-        // Skip batches that were already processed via allocationsData
-        const processedAllocationIds = new Set(allocationsData?.map(a => a.id) || []);
+        // Skip batches that were already processed via filteredAllocationsData
+        const processedAllocationIds = new Set(filteredAllocationsData?.map(a => a.id) || []);
         
-        if (directBatchesData) {
+        if (filteredDirectBatchesData) {
           console.log('Processing farm batches:', { 
-            count: directBatchesData.length,
-            batches: directBatchesData,
-            alreadyProcessedCount: directBatchesData.filter(b => b.allocation_id && processedAllocationIds.has(b.allocation_id)).length
+            count: filteredDirectBatchesData.length,
+            batches: filteredDirectBatchesData,
+            alreadyProcessedCount: filteredDirectBatchesData.filter(b => b.allocation_id && processedAllocationIds.has(b.allocation_id)).length
           });
           
-          directBatchesData.forEach(batch => {
+          filteredDirectBatchesData.forEach(batch => {
             // Skip if this batch's allocation was already processed
             if (batch.allocation_id && processedAllocationIds.has(batch.allocation_id)) {
               console.log('Skipping batch - already processed via allocation:', batch.id);
