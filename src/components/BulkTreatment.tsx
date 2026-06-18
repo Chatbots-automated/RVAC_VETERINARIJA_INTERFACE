@@ -836,10 +836,13 @@ export function BulkTreatment() {
                     <div className="flex-1">
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Kiekis <span className="text-red-600">vienam gyvūnui</span>
+                        {selectedProduct && (selectedProduct.primary_pack_unit === 'kg' || selectedProduct.primary_pack_unit === 'l') && (
+                          <span className="text-orange-600 ml-1">(naudokite dešimtaines: 0.125 {selectedProduct.primary_pack_unit} = 125 {selectedProduct.primary_pack_unit === 'kg' ? 'g' : 'ml'})</span>
+                        )}
                       </label>
                       <input
                         type="number"
-                        step="0.01"
+                        step="0.001"
                         value={med.qty}
                         onChange={(e) => updateMedication(med.id, 'qty', e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -848,7 +851,7 @@ export function BulkTreatment() {
                       />
                       {med.qty && selectedAnimals.length > 0 && (
                         <p className="text-xs text-blue-600 mt-1 font-medium">
-                          Iš viso reikės: {(parseFloat(med.qty) * selectedAnimals.length).toFixed(2)} {med.unit}
+                          Iš viso reikės: {(parseFloat(med.qty) * selectedAnimals.length).toFixed(3)} {med.unit}
                         </p>
                       )}
                     </div>
@@ -856,17 +859,13 @@ export function BulkTreatment() {
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Vnt.
                       </label>
-                      <select
+                      <input
+                        type="text"
                         value={med.unit}
-                        onChange={(e) => updateMedication(med.id, 'unit', e.target.value as Unit)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                      >
-                        <option value="ml">ml</option>
-                        <option value="l">l</option>
-                        <option value="g">g</option>
-                        <option value="kg">kg</option>
-                        <option value="vnt">vnt</option>
-                      </select>
+                        disabled
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 text-sm cursor-not-allowed"
+                        title="Vienetas turi atitikti produkto vienetą"
+                      />
                     </div>
                   </div>
 

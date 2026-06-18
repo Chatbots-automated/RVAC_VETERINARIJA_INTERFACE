@@ -4501,24 +4501,13 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Vienetas</label>
-                        <select
+                        <input
+                          type="text"
                           value={vaccine.unit}
-                          onChange={(e) => {
-                            const newVaccines = [...vaccinationData.vaccines];
-                            newVaccines[index] = { ...vaccine, unit: e.target.value as any };
-                            setVaccinationData({ ...vaccinationData, vaccines: newVaccines });
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                        >
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="vnt">vnt</option>
-                          <option value="bolus">bolus</option>
-                          <option value="syringe">syringe</option>
-                          <option value="tabletė">tabletė</option>
-                        </select>
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                          title="Vienetas nustatytas iš produkto"
+                        />
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Dozės Nr.</label>
@@ -4685,24 +4674,13 @@ function VisitCreateModal({ animalId, onClose, onSuccess, visitToEdit }: { anima
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Vienetas</label>
-                        <select
+                        <input
+                          type="text"
                           value={product.dose_unit}
-                          onChange={(e) => {
-                            const newProducts = [...preventionData.products];
-                            newProducts[index] = { ...product, dose_unit: e.target.value as any };
-                            setPreventionData({ ...preventionData, products: newProducts });
-                          }}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                        >
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="vnt">vnt</option>
-                          <option value="bolus">bolus</option>
-                          <option value="syringe">syringe</option>
-                          <option value="tabletė">tabletė</option>
-                        </select>
+                          disabled
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                          title="Vienetas nustatytas iš produkto"
+                        />
                       </div>
                     </div>
 

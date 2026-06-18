@@ -491,7 +491,7 @@ export function Vaccinations() {
                       <div className="flex gap-1">
                         <input
                           type="number"
-                          step="0.01"
+                          step="0.001"
                           value={vaccine.dose_amount}
                           onChange={(e) => {
                             const newVaccines = [...massVaccines];
@@ -501,21 +501,13 @@ export function Vaccinations() {
                           className="flex-1 px-2 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500"
                           placeholder="2.5"
                         />
-                        <select
+                        <input
+                          type="text"
                           value={vaccine.unit}
-                          onChange={(e) => {
-                            const newVaccines = [...massVaccines];
-                            newVaccines[idx].unit = e.target.value as Unit;
-                            setMassVaccines(newVaccines);
-                          }}
-                          className="w-16 px-1 py-1.5 border border-gray-300 rounded text-xs focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="vnt">vnt</option>
-                        </select>
+                          disabled
+                          className="w-16 px-1 py-1.5 border border-gray-300 rounded text-xs bg-gray-100 text-gray-700 cursor-not-allowed"
+                          title="Vienetas nustatytas iš produkto"
+                        />
                       </div>
                     </div>
 

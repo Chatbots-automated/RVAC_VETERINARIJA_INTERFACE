@@ -16,6 +16,8 @@ interface WarehouseStock {
   received_qty: number;
   available_qty: number;
   qty_allocated: number;
+  purchase_price: number | null;
+  currency: string | null;
   supplier_name: string | null;
   doc_number: string | null;
   created_at: string;

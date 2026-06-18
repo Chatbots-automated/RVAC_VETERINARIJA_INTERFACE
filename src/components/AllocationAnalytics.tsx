@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { BarChart3, TrendingUp, Building2, Package, Euro, Download, ChevronRight } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { FarmDetailAnalytics } from './FarmDetailAnalytics';
+import { SearchableSelect } from './SearchableSelect';
 
 // Helper to translate category names to Lithuanian
 function translateCategory(category: string | null | undefined): string {
@@ -325,19 +326,17 @@ export function AllocationAnalytics() {
             />
           </div>
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ūkis</label>
-            <select
+            <SearchableSelect
+              label="Ūkis"
+              options={allFarms.map(farm => ({
+                value: farm.id,
+                label: `${farm.name} (${farm.code})`
+              }))}
               value={filterFarmId}
-              onChange={(e) => setFilterFarmId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Visi ūkiai</option>
-              {allFarms.map((farm) => (
-                <option key={farm.id} value={farm.id}>
-                  {farm.name} ({farm.code})
-                </option>
-              ))}
-            </select>
+              onChange={setFilterFarmId}
+              placeholder="Pasirinkite ūkį..."
+              emptyLabel="Visi ūkiai"
+            />
           </div>
           <button
             onClick={() => {
