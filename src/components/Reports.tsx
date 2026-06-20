@@ -19,7 +19,8 @@ import {
   X,
   RefreshCw,
   Printer,
-  Heart
+  Heart,
+  Warehouse
 } from 'lucide-react';
 import {
   TreatedAnimalsReport,
@@ -27,7 +28,8 @@ import {
   DrugJournalReport,
   BiocideJournalReport,
   InseminationJournalReport,
-  WithdrawalReport
+  WithdrawalReport,
+  WarehouseStockReport
 } from './ReportTemplates';
 import { SearchableSelect } from './SearchableSelect';
 import { InvoiceViewer } from './InvoiceViewer';
@@ -50,7 +52,7 @@ interface AnalyticsData {
   inventoryByCategory: Array<{ category: string; value: number }>;
 }
 
-type ReportType = 'analytics' | 'drug_journal' | 'treated_animals' | 'biocide_journal' | 'insemination_journal' | 'medical_waste' | 'invoices' | 'withdrawal';
+type ReportType = 'analytics' | 'drug_journal' | 'treated_animals' | 'biocide_journal' | 'insemination_journal' | 'medical_waste' | 'invoices' | 'withdrawal' | 'warehouse_stock';
 
 // Get current month's first and last day
 const getCurrentMonthDates = () => {
@@ -459,6 +461,18 @@ export function Reports() {
           break;
         }
 
+        case 'warehouse_stock': {
+          const { data, error } = await supabase
+            .from('vw_warehouse_inventory')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          result = (data || []).filter(item => item.qty_left > 0);
+          break;
+        }
+
         default:
           return;
       }
@@ -797,6 +811,8 @@ export function Reports() {
         return <BiocideJournalReport data={data} />;
       case 'insemination_journal':
         return <InseminationJournalReport data={data} />;
+      case 'warehouse_stock':
+        return <WarehouseStockReport data={data} />;
       default:
         return null;
     }
@@ -811,6 +827,7 @@ export function Reports() {
     biocide_journal: { name: 'Biocidų žurnalas', icon: Package, color: 'purple' },
     insemination_journal: { name: 'Sėklinimo žurnalas', icon: Heart, color: 'rose' },
     medical_waste: { name: 'Medicininių atliekų žurnalas', icon: AlertTriangle, color: 'orange' },
+    warehouse_stock: { name: 'Sandėlio atsargos', icon: Warehouse, color: 'cyan' },
   };
 
   const currentReport = reportTypeInfo[reportType];

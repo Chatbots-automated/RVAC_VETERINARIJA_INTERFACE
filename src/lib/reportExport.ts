@@ -387,6 +387,71 @@ const INVOICES_COLUMNS: ExportColumn[] = [
   }
 ];
 
+export const WAREHOUSE_STOCK_COLUMNS: ExportColumn[] = [
+  { key: 'product_name', header: 'Produktas', width: 30 },
+  { key: 'category', header: 'Kategorija', width: 20 },
+  { key: 'lot', header: 'Partija/LOT', width: 18 },
+  { 
+    key: 'received_qty', 
+    header: 'Priimta', 
+    width: 12,
+    format: (val: number, row: any) => val ? `${parseFloat(val.toString()).toFixed(2)} ${row.unit || ''}` : '0'
+  },
+  { 
+    key: 'qty_allocated', 
+    header: 'Paskirstyta', 
+    width: 12,
+    format: (val: number, row: any) => val ? `${parseFloat(val.toString()).toFixed(2)} ${row.unit || ''}` : '0'
+  },
+  { 
+    key: 'qty_left', 
+    header: 'Likutis', 
+    width: 12,
+    format: (val: number, row: any) => val ? `${parseFloat(val.toString()).toFixed(2)} ${row.unit || ''}` : '0'
+  },
+  { 
+    key: 'purchase_price', 
+    header: 'Pirkimo kaina', 
+    width: 15,
+    format: (val: number, row: any) => val ? `${parseFloat(val.toString()).toFixed(2)} ${row.currency || '€'}` : '-'
+  },
+  { 
+    key: 'purchase_price', 
+    header: 'Vnt. kaina', 
+    width: 12,
+    format: (val: number, row: any) => {
+      if (!val || !row.received_qty) return '-';
+      const unitPrice = parseFloat(val.toString()) / parseFloat(row.received_qty.toString());
+      return `${unitPrice.toFixed(2)} ${row.currency || '€'}`;
+    }
+  },
+  { 
+    key: 'purchase_price', 
+    header: 'Likučio vertė', 
+    width: 15,
+    format: (val: number, row: any) => {
+      if (!val || !row.received_qty || !row.qty_left) return '-';
+      const unitPrice = parseFloat(val.toString()) / parseFloat(row.received_qty.toString());
+      const remainingValue = unitPrice * parseFloat(row.qty_left.toString());
+      return `${remainingValue.toFixed(2)} ${row.currency || '€'}`;
+    }
+  },
+  { 
+    key: 'expiry_date', 
+    header: 'Galioja iki', 
+    width: 15,
+    format: (val: string) => val ? formatDateLT(val) : '-'
+  },
+  { key: 'supplier_name', header: 'Tiekėjas', width: 25 },
+  { key: 'doc_number', header: 'Dokumentas', width: 18 },
+  { 
+    key: 'doc_date', 
+    header: 'Dok. data', 
+    width: 12,
+    format: (val: string) => val ? formatDateLT(val) : '-'
+  },
+];
+
 export function getColumnsForReportType(reportType: string): ExportColumn[] {
   switch (reportType) {
     case 'drug_journal':
@@ -403,6 +468,8 @@ export function getColumnsForReportType(reportType: string): ExportColumn[] {
       return MEDICAL_WASTE_COLUMNS;
     case 'invoices':
       return INVOICES_COLUMNS;
+    case 'warehouse_stock':
+      return WAREHOUSE_STOCK_COLUMNS;
     default:
       return [];
   }
@@ -417,6 +484,7 @@ export function getReportTitle(reportType: string): string {
     insemination_journal: 'Sėklinimo žurnalas',
     medical_waste: 'Medicininių atliekų žurnalas',
     invoices: 'Sąskaitos',
+    warehouse_stock: 'Sandėlio atsargos',
   };
   return titles[reportType] || 'Ataskaita';
 }

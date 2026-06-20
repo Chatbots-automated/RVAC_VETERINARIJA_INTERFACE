@@ -9,18 +9,20 @@ import {
   X,
   Building2,
   Package,
-  AlertTriangle
+  AlertTriangle,
+  Warehouse
 } from 'lucide-react';
 import {
   TreatedAnimalsReport,
   DrugJournalReport,
   WithdrawalReport,
-  InvoicesReport
+  InvoicesReport,
+  WarehouseStockReport
 } from './ReportTemplates';
 import { SearchableSelect } from './SearchableSelect';
 import { exportReportToExcel, getColumnsForReportType, getReportTitle } from '../lib/reportExport';
 
-type ReportType = 'drug_journal' | 'treated_animals' | 'withdrawal' | 'invoices';
+type ReportType = 'drug_journal' | 'treated_animals' | 'withdrawal' | 'invoices' | 'warehouse_stock';
 
 const getCurrentMonthDates = () => {
   const now = new Date();
@@ -59,8 +61,8 @@ export function AllFarmsReports() {
   useEffect(() => {
     loadFilterOptions();
     
-    // For invoices, clear date filters
-    if (reportType === 'invoices') {
+    // For invoices and warehouse_stock, clear date filters
+    if (reportType === 'invoices' || reportType === 'warehouse_stock') {
       setDateFrom('');
       setDateTo('');
     } else if (reportType !== 'treated_animals') {
@@ -73,8 +75,8 @@ export function AllFarmsReports() {
 
   // Auto-load reports when ready
   useEffect(() => {
-    if (reportType === 'invoices') {
-      // Load invoices immediately without date filters
+    if (reportType === 'invoices' || reportType === 'warehouse_stock') {
+      // Load invoices and warehouse stock immediately without date filters
       loadReport();
     } else if (reportType === 'treated_animals' && dateFrom && dateTo) {
       loadReport();
@@ -232,6 +234,18 @@ export function AllFarmsReports() {
           result = invoicesWithItems;
           break;
         }
+
+        case 'warehouse_stock': {
+          const { data, error } = await supabase
+            .from('vw_warehouse_inventory')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          result = (data || []).filter(item => item.qty_left > 0);
+          break;
+        }
       }
 
       setData(result);
@@ -324,6 +338,17 @@ export function AllFarmsReports() {
           >
             <FileText className="w-4 h-4" />
             Sąskaitos
+          </button>
+          <button
+            onClick={() => setReportType('warehouse_stock')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              reportType === 'warehouse_stock'
+                ? 'bg-slate-700 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Warehouse className="w-4 h-4" />
+            Sandėlio atsargos
           </button>
         </div>
 
@@ -510,6 +535,7 @@ export function AllFarmsReports() {
             {reportType === 'treated_animals' && <TreatedAnimalsReport data={data} />}
             {reportType === 'withdrawal' && <WithdrawalReport data={data} onDataChange={loadReport} />}
             {reportType === 'invoices' && <InvoicesReport data={data} onInvoiceDeleted={loadReport} />}
+            {reportType === 'warehouse_stock' && <WarehouseStockReport data={data} />}
           </div>
         )}
       </div>

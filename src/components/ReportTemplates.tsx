@@ -2033,3 +2033,285 @@ export function InvoicesReport({ data, onInvoiceDeleted }: InvoicesReportProps) 
     </div>
   );
 }
+
+interface WarehouseStockReportProps {
+  data: any[];
+}
+
+export function WarehouseStockReport({ data }: WarehouseStockReportProps) {
+  const exportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(toAscii('SANDELIO ATSARGU ATASKAITA'), doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(toAscii(`Sugeneruota: ${formatDateLT(new Date().toISOString())}`), doc.internal.pageSize.getWidth() / 2, 22, { align: 'center' });
+
+    const tableData = data.map((row) => {
+      const unitPrice = row.purchase_price && row.received_qty 
+        ? (parseFloat(row.purchase_price) / parseFloat(row.received_qty)).toFixed(2) 
+        : '-';
+      const remainingValue = row.purchase_price && row.received_qty && row.qty_left
+        ? ((parseFloat(row.purchase_price) / parseFloat(row.received_qty)) * parseFloat(row.qty_left)).toFixed(2)
+        : '-';
+      
+      return [
+        toAscii(row.product_name || ''),
+        toAscii(row.category || ''),
+        toAscii(row.lot || '-'),
+        `${parseFloat(row.received_qty || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
+        `${parseFloat(row.qty_allocated || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
+        `${parseFloat(row.qty_left || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
+        row.purchase_price ? `${parseFloat(row.purchase_price).toFixed(2)} ${toAscii(row.currency || 'EUR')}` : '-',
+        unitPrice !== '-' ? `${unitPrice} ${toAscii(row.currency || 'EUR')}` : '-',
+        remainingValue !== '-' ? `${remainingValue} ${toAscii(row.currency || 'EUR')}` : '-',
+        row.expiry_date ? formatDateLT(row.expiry_date) : '-',
+        toAscii(row.supplier_name || '-'),
+      ];
+    });
+
+    autoTable(doc, {
+      head: [[
+        toAscii('Produktas'),
+        toAscii('Kategorija'),
+        toAscii('LOT'),
+        toAscii('Priimta'),
+        toAscii('Paskirstyta'),
+        toAscii('Likutis'),
+        toAscii('Pirkimo kaina'),
+        toAscii('Vnt. kaina'),
+        toAscii('Likucio verte'),
+        toAscii('Galioja iki'),
+        toAscii('Tiekejas'),
+      ]],
+      body: tableData,
+      startY: 28,
+      styles: {
+        fontSize: 7,
+        cellPadding: 2,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1,
+      },
+      headStyles: {
+        fillColor: [59, 130, 246],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+        halign: 'center',
+      },
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 18 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 22 },
+        7: { cellWidth: 18 },
+        8: { cellWidth: 22 },
+        9: { cellWidth: 18 },
+        10: { cellWidth: 25 },
+      },
+      alternateRowStyles: {
+        fillColor: [245, 247, 250],
+      },
+      margin: { left: 10, right: 10 },
+    });
+
+    const totalValue = data.reduce((sum, row) => {
+      if (row.purchase_price && row.received_qty && row.qty_left) {
+        const unitPrice = parseFloat(row.purchase_price) / parseFloat(row.received_qty);
+        const remainingValue = unitPrice * parseFloat(row.qty_left);
+        return sum + remainingValue;
+      }
+      return sum;
+    }, 0);
+
+    const finalY = (doc as any).lastAutoTable.finalY || 28;
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(toAscii(`Bendra likucio verte: ${totalValue.toFixed(2)} EUR`), doc.internal.pageSize.getWidth() - 15, finalY + 10, { align: 'right' });
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    doc.save(`sandelio_atsargos_${timestamp}.pdf`);
+  };
+
+  const isExpiringSoon = (expiryDate: string | null) => {
+    if (!expiryDate) return false;
+    const expiry = new Date(expiryDate);
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+    return expiry <= thirtyDaysFromNow && expiry >= new Date();
+  };
+
+  const isExpired = (expiryDate: string | null) => {
+    if (!expiryDate) return false;
+    return new Date(expiryDate) < new Date();
+  };
+
+  const calculateUnitPrice = (purchasePrice: number, receivedQty: number) => {
+    if (!purchasePrice || !receivedQty) return null;
+    return parseFloat(purchasePrice.toString()) / parseFloat(receivedQty.toString());
+  };
+
+  const calculateRemainingValue = (purchasePrice: number, receivedQty: number, qtyLeft: number) => {
+    const unitPrice = calculateUnitPrice(purchasePrice, receivedQty);
+    if (!unitPrice) return null;
+    return unitPrice * parseFloat(qtyLeft.toString());
+  };
+
+  const totalRemainingValue = data.reduce((sum, row) => {
+    const value = calculateRemainingValue(row.purchase_price, row.received_qty, row.qty_left);
+    return sum + (value || 0);
+  }, 0);
+
+  const translateCategory = (category: string): string => {
+    const translations: Record<string, string> = {
+      'medicines': 'Vaistai',
+      'prevention': 'Prevencija',
+      'ovules': 'Ovulės',
+      'vakcina': 'Vakcina',
+      'bolusas': 'Bolusas',
+      'svirkstukai': 'Švirkštukai',
+      'hygiene': 'Higiena',
+      'biocide': 'Biocidas',
+      'technical': 'Techniniai',
+      'treatment_materials': 'Gydymo medžiagos',
+      'reproduction': 'Reprodukcija',
+    };
+    return translations[category] || category;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm text-gray-600">Iš viso: <span className="font-semibold text-gray-900">{data.length}</span> pozicijų</p>
+          <p className="text-sm text-gray-600">Bendra likučio vertė: <span className="font-semibold text-blue-600">€{totalRemainingValue.toFixed(2)}</span></p>
+        </div>
+        <button
+          onClick={exportToPDF}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+        >
+          <Download className="w-4 h-4" />
+          PDF
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Produktas</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kategorija</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">LOT</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Priimta</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Paskirstyta</th>
+                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Likutis</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Pirkimo kaina</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Vnt. kaina</th>
+                <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Likučio vertė</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Galiojimas</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Tiekėjas</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {data.map((row, index) => {
+                const unitPrice = calculateUnitPrice(row.purchase_price, row.received_qty);
+                const remainingValue = calculateRemainingValue(row.purchase_price, row.received_qty, row.qty_left);
+                
+                return (
+                  <tr key={index} className="hover:bg-blue-50 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{row.product_name}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{translateCategory(row.category)}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-700 font-mono">{row.lot || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-sm text-gray-900 font-medium">
+                        {parseFloat(row.received_qty || 0).toFixed(2)} {row.unit}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="text-sm text-blue-600 font-medium">
+                        {parseFloat(row.qty_allocated || 0).toFixed(2)} {row.unit}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`text-sm font-bold ${
+                        row.qty_left <= 0 ? 'text-gray-400' :
+                        row.qty_left < 10 ? 'text-orange-600' :
+                        'text-green-600'
+                      }`}>
+                        {parseFloat(row.qty_left || 0).toFixed(2)} {row.unit}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm text-gray-900 font-medium">
+                        {row.purchase_price 
+                          ? `${parseFloat(row.purchase_price).toFixed(2)} ${row.currency || '€'}`
+                          : '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm text-gray-700">
+                        {unitPrice 
+                          ? `${unitPrice.toFixed(2)} ${row.currency || '€'}`
+                          : '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm font-bold text-blue-700">
+                        {remainingValue 
+                          ? `${remainingValue.toFixed(2)} ${row.currency || '€'}`
+                          : '-'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {row.expiry_date ? (
+                        <div>
+                          <span className="text-sm text-gray-600">
+                            {formatDateLT(row.expiry_date)}
+                          </span>
+                          {isExpired(row.expiry_date) && (
+                            <div className="text-xs text-red-600 font-medium mt-1">Pasibaigusi</div>
+                          )}
+                          {!isExpired(row.expiry_date) && isExpiringSoon(row.expiry_date) && (
+                            <div className="text-xs text-orange-600 font-medium mt-1">Greitai pasibaigs</div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">N/A</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{row.supplier_name || '-'}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot className="bg-gradient-to-r from-blue-50 to-indigo-50 border-t-2 border-blue-200">
+              <tr>
+                <td colSpan={8} className="px-4 py-3 text-right font-bold text-gray-900">
+                  Bendra likučio vertė:
+                </td>
+                <td className="px-4 py-3 text-right font-bold text-blue-700 text-lg">
+                  €{totalRemainingValue.toFixed(2)}
+                </td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
