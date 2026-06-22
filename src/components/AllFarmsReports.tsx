@@ -352,15 +352,31 @@ export function AllFarmsReports() {
           </button>
         </div>
 
-        <div className="mb-6">
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 text-slate-700 hover:text-slate-900 font-medium"
-          >
-            <Filter className="w-5 h-5" />
-            {showFilters ? 'Slėpti filtrus' : 'Rodyti filtrus'}
-          </button>
-        </div>
+        {reportType !== 'warehouse_stock' && (
+          <div className="mb-6">
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 text-slate-700 hover:text-slate-900 font-medium"
+            >
+              <Filter className="w-5 h-5" />
+              {showFilters ? 'Slėpti filtrus' : 'Rodyti filtrus'}
+            </button>
+          </div>
+        )}
+
+        {reportType === 'warehouse_stock' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900">Realaus laiko sandėlio atsargos</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Rodoma visa šiuo metu sandėlyje esanti prekė (dar nepriskirta jokiam ūkiui)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {showFilters && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
@@ -376,47 +392,53 @@ export function AllFarmsReports() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Calendar className="w-4 h-4 inline mr-1" />
-                  Nuo datos
-                </label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500"
-                />
-              </div>
+              {reportType !== 'warehouse_stock' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Nuo datos
+                    </label>
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Calendar className="w-4 h-4 inline mr-1" />
-                  Iki datos
-                </label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500"
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <Calendar className="w-4 h-4 inline mr-1" />
+                      Iki datos
+                    </label>
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500"
+                    />
+                  </div>
+                </>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  <Building2 className="w-4 h-4 inline mr-1" />
-                  Ūkis
-                </label>
-                <SearchableSelect
-                  options={[
-                    { value: '', label: 'Visi ūkiai' },
-                    ...farms.map(f => ({ value: f.id, label: `${f.name} (${f.code})` }))
-                  ]}
-                  value={filterFarm}
-                  onChange={setFilterFarm}
-                  placeholder="Pasirinkite ūkį..."
-                />
-              </div>
+              {reportType !== 'warehouse_stock' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Building2 className="w-4 h-4 inline mr-1" />
+                    Ūkis
+                  </label>
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'Visi ūkiai' },
+                      ...farms.map(f => ({ value: f.id, label: `${f.name} (${f.code})` }))
+                    ]}
+                    value={filterFarm}
+                    onChange={setFilterFarm}
+                    placeholder="Pasirinkite ūkį..."
+                  />
+                </div>
+              )}
 
               {reportType === 'treated_animals' && (
                 <>
@@ -499,14 +521,16 @@ export function AllFarmsReports() {
               )}
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={loadReport}
-                className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
-              >
-                Taikyti filtrus
-              </button>
-            </div>
+            {reportType !== 'warehouse_stock' && (
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={loadReport}
+                  className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
+                >
+                  Taikyti filtrus
+                </button>
+              </div>
+            )}
           </div>
         )}
 
