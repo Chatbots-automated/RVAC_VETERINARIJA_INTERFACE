@@ -2061,7 +2061,8 @@ export function WarehouseStockReport({ data }: WarehouseStockReportProps) {
       return [
         toAscii(row.product_name || ''),
         toAscii(row.category || ''),
-        toAscii(row.lot || '-'),
+        toAscii(row.batch_number || row.lot || '-'),
+        toAscii(row.doc_number || '-'),
         `${parseFloat(row.received_qty || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
         `${parseFloat(row.qty_allocated || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
         `${parseFloat(row.qty_left || 0).toFixed(2)} ${toAscii(row.unit || '')}`,
@@ -2077,7 +2078,8 @@ export function WarehouseStockReport({ data }: WarehouseStockReportProps) {
       head: [[
         toAscii('Produktas'),
         toAscii('Kategorija'),
-        toAscii('LOT'),
+        toAscii('Serijos Nr.'),
+        toAscii('Saskaita'),
         toAscii('Priimta'),
         toAscii('Paskirstyta'),
         toAscii('Likutis'),
@@ -2207,7 +2209,8 @@ export function WarehouseStockReport({ data }: WarehouseStockReportProps) {
               <tr>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Produktas</th>
                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Kategorija</th>
-                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">LOT</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Serijos Nr.</th>
+                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Sąskaita</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Priimta</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Paskirstyta</th>
                 <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase tracking-wider">Likutis</th>
@@ -2232,7 +2235,10 @@ export function WarehouseStockReport({ data }: WarehouseStockReportProps) {
                       <span className="text-sm text-gray-600">{translateCategory(row.category)}</span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="text-sm text-gray-700 font-mono">{row.lot || '-'}</span>
+                      <span className="text-sm text-gray-700 font-mono">{row.batch_number || row.lot || '-'}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-700">{row.doc_number || '-'}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className="text-sm text-gray-900 font-medium">

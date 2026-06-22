@@ -390,7 +390,8 @@ const INVOICES_COLUMNS: ExportColumn[] = [
 export const WAREHOUSE_STOCK_COLUMNS: ExportColumn[] = [
   { key: 'product_name', header: 'Produktas', width: 30 },
   { key: 'category', header: 'Kategorija', width: 20 },
-  { key: 'lot', header: 'Partija/LOT', width: 18 },
+  { key: 'batch_number', header: 'Serijos Nr.', width: 18 },
+  { key: 'doc_number', header: 'Sąskaita', width: 18 },
   { 
     key: 'received_qty', 
     header: 'Priimta', 

@@ -83,7 +83,7 @@ export function AllFarmsReports() {
     } else if (reportType !== 'treated_animals' && dateFrom && dateTo) {
       loadReport();
     }
-  }, [reportType, dateFrom, dateTo]);
+  }, [reportType, dateFrom, dateTo, filterProduct, filterFarm, filterAnimal, filterDisease, filterInvoice]);
 
   const loadFilterOptions = async () => {
     try {
@@ -187,6 +187,7 @@ export function AllFarmsReports() {
           if (dateFrom) query = query.gte('invoice_date', dateFrom);
           if (dateTo) query = query.lte('invoice_date', dateTo);
           if (filterFarm) query = query.eq('farm_id', filterFarm);
+          if (filterInvoice) query = query.ilike('invoice_number', `%${filterInvoice}%`);
 
           const { data: invoicesData, error: invoicesError } = await query;
           
@@ -236,10 +237,16 @@ export function AllFarmsReports() {
         }
 
         case 'warehouse_stock': {
-          const { data, error } = await supabase
+          let query = supabase
             .from('vw_warehouse_inventory')
             .select('*')
             .order('created_at', { ascending: false });
+
+          if (filterProduct) {
+            query = query.eq('product_id', filterProduct);
+          }
+
+          const { data, error } = await query;
 
           if (error) throw error;
 
@@ -372,6 +379,20 @@ export function AllFarmsReports() {
                 <p className="text-sm font-semibold text-blue-900">Realaus laiko sandėlio atsargos</p>
                 <p className="text-xs text-blue-700 mt-1">
                   Rodoma visa šiuo metu sandėlyje esanti prekė (dar nepriskirta jokiam ūkiui)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {reportType === 'invoices' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-semibold text-blue-900">Sąskaitų žurnalas</p>
+                <p className="text-xs text-blue-700 mt-1">
+                  Filtrai atsinaujina automatiškai. Įveskite sąskaitos numerį norint rasti konkretų dokumentą.
                 </p>
               </div>
             </div>
@@ -519,9 +540,43 @@ export function AllFarmsReports() {
                   </div>
                 </>
               )}
+
+              {reportType === 'warehouse_stock' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <Package className="w-4 h-4 inline mr-1" />
+                    Produktas
+                  </label>
+                  <SearchableSelect
+                    options={[
+                      { value: '', label: 'Visi produktai' },
+                      ...products.map(p => ({ value: p.id, label: p.name }))
+                    ]}
+                    value={filterProduct}
+                    onChange={setFilterProduct}
+                    placeholder="Pasirinkite produktą..."
+                  />
+                </div>
+              )}
+
+              {reportType === 'invoices' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <FileText className="w-4 h-4 inline mr-1" />
+                    Sąskaitos Nr.
+                  </label>
+                  <input
+                    type="text"
+                    value={filterInvoice}
+                    onChange={(e) => setFilterInvoice(e.target.value)}
+                    placeholder="Pvz: RVAC43000880"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500"
+                  />
+                </div>
+              )}
             </div>
 
-            {reportType !== 'warehouse_stock' && (
+            {reportType !== 'warehouse_stock' && reportType !== 'invoices' && (
               <div className="mt-4 flex gap-2">
                 <button
                   onClick={loadReport}
